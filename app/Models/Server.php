@@ -7,13 +7,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Server extends Model
 {
-    protected $fillable = ['user_id', 'name', 'ip_address', 'ram_mb', 'authorized_keys', 'provision_token', 'sites_user', 'provisioned_at'];
+    protected $fillable = ['user_id', 'name', 'ip_address', 'ram_mb', 'authorized_keys', 'provision_token', 'sites_user', 'provisioned_at', 'mysql_root_password', 'deploy_user_password'];
+
+    protected $hidden = ['mysql_root_password', 'deploy_user_password'];
 
     protected function casts(): array
     {
         return [
             'ram_mb' => 'integer',
             'provisioned_at' => 'datetime',
+            'mysql_root_password' => 'encrypted',
+            'deploy_user_password' => 'encrypted',
         ];
     }
 

@@ -34,6 +34,8 @@ new class extends Component
             'sites_user' => $this->sites_user,
             'authorized_keys' => $this->authorized_keys ?: null,
             'provision_token' => str()->random(64),
+            'mysql_root_password' => str()->password(32, letters: true, numbers: true, symbols: false),
+            'deploy_user_password' => str()->password(32, letters: true, numbers: true, symbols: false),
         ]);
 
         $this->redirect(route('servers.provision', $server), navigate: true);

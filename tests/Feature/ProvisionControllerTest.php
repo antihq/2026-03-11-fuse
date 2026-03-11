@@ -15,6 +15,8 @@ test('valid token returns provisioning script', function () {
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
         'provision_token' => 'valid-token-123',
+        'mysql_root_password' => 'test-mysql-password-123',
+        'deploy_user_password' => 'test-deploy-password-123',
     ]);
 
     $response = $this->get(route('provision.show', 'valid-token-123'));
@@ -29,7 +31,9 @@ test('valid token returns provisioning script', function () {
         ->toContain('Server Provisioning Script')
         ->toContain('Production Server')
         ->toContain('SITES_USER="deploy"')
-        ->toContain('MEMORY_MB=2048');
+        ->toContain('MEMORY_MB=2048')
+        ->toContain('MYSQL_ROOT_PASSWORD="test-mysql-password-123"')
+        ->toContain('DEPLOY_USER_PASSWORD="test-deploy-password-123"');
 });
 
 test('invalid token returns 410 gone', function () {
@@ -46,6 +50,8 @@ test('token is nullified after first use', function () {
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
         'provision_token' => 'one-time-token',
+        'mysql_root_password' => 'test-mysql-password-123',
+        'deploy_user_password' => 'test-deploy-password-123',
     ]);
 
     $this->get(route('provision.show', 'one-time-token'))->assertStatus(200);
@@ -65,6 +71,8 @@ test('script includes user root ssh key', function () {
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
         'provision_token' => 'token-with-user-key',
+        'mysql_root_password' => 'test-mysql-password-123',
+        'deploy_user_password' => 'test-deploy-password-123',
     ]);
 
     $response = $this->get(route('provision.show', 'token-with-user-key'));

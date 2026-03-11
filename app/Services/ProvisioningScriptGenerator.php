@@ -70,6 +70,8 @@ class ProvisioningScriptGenerator
             'mysqlMaxConnections' => $this->mysqlMaxConnections(),
             'mysqlInnodbBufferPoolSize' => $this->mysqlInnodbBufferPoolSize(),
             'maxChildrenPhpPool' => $this->maxChildrenPhpPool(),
+            'mysqlRootPassword' => $this->server->mysql_root_password,
+            'deployUserPassword' => $this->server->deploy_user_password,
         ])->render();
 
         return $this->formatScript($script);

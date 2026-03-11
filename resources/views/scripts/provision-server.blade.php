@@ -32,11 +32,6 @@ function waitForAptUnlock()
     fi
 }
 
-function generatePassword()
-{
-    openssl rand -base64 24 | tr -d '/+=' | head -c 32
-}
-
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
@@ -50,8 +45,8 @@ MYSQL_MAX_CONNECTIONS={{ $mysqlMaxConnections }}
 MYSQL_INNODB_BUFFER_POOL_SIZE={{ $mysqlInnodbBufferPoolSize }}M
 PHP_PM_MAX_CHILDREN={{ $maxChildrenPhpPool }}
 
-MYSQL_ROOT_PASSWORD=$(generatePassword)
-DEPLOY_USER_PASSWORD=$(generatePassword)
+MYSQL_ROOT_PASSWORD="{{ $mysqlRootPassword }}"
+DEPLOY_USER_PASSWORD="{{ $deployUserPassword }}"
 
 echo "=========================================="
 echo "Server Provisioning Script"

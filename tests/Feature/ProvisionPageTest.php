@@ -16,6 +16,8 @@ test('guests cannot access provision page', function () {
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
         'provision_token' => 'test-token',
+        'mysql_root_password' => 'test-mysql-password-123',
+        'deploy_user_password' => 'test-deploy-password-123',
     ]);
 
     $this->get(route('servers.provision', $server))->assertRedirect(route('login'));
@@ -29,6 +31,8 @@ test('authenticated users can access provision page', function () {
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
         'provision_token' => 'test-token',
+        'mysql_root_password' => 'test-mysql-password-123',
+        'deploy_user_password' => 'test-deploy-password-123',
     ]);
 
     $this->actingAs($this->user)
@@ -46,6 +50,8 @@ test('provision page displays provision url', function () {
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
         'provision_token' => 'my-provision-token',
+        'mysql_root_password' => 'test-mysql-password-123',
+        'deploy_user_password' => 'test-deploy-password-123',
     ]);
 
     Livewire::actingAs($this->user)
@@ -61,6 +67,8 @@ test('regenerate token creates new token and updates url', function () {
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
         'provision_token' => 'original-token',
+        'mysql_root_password' => 'test-mysql-password-123',
+        'deploy_user_password' => 'test-deploy-password-123',
     ]);
 
     Livewire::actingAs($this->user)
@@ -79,6 +87,8 @@ test('mark as provisioned sets provisioned_at and clears token', function () {
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
         'provision_token' => 'test-token',
+        'mysql_root_password' => 'test-mysql-password-123',
+        'deploy_user_password' => 'test-deploy-password-123',
     ]);
 
     Livewire::actingAs($this->user)
@@ -101,6 +111,8 @@ test('regenerate token does nothing when server is already provisioned', functio
         'sites_user' => 'deploy',
         'provision_token' => null,
         'provisioned_at' => now(),
+        'mysql_root_password' => 'test-mysql-password-123',
+        'deploy_user_password' => 'test-deploy-password-123',
     ]);
 
     Livewire::actingAs($this->user)
@@ -120,6 +132,8 @@ test('provisioned server shows success message instead of command', function () 
         'sites_user' => 'deploy',
         'provision_token' => null,
         'provisioned_at' => now(),
+        'mysql_root_password' => 'test-mysql-password-123',
+        'deploy_user_password' => 'test-deploy-password-123',
     ]);
 
     Livewire::actingAs($this->user)
@@ -137,6 +151,8 @@ test('unprovisioned server shows provisioning command and mark button', function
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
         'provision_token' => 'test-token',
+        'mysql_root_password' => 'test-mysql-password-123',
+        'deploy_user_password' => 'test-deploy-password-123',
     ]);
 
     Livewire::actingAs($this->user)
@@ -154,6 +170,8 @@ test('provision page handles server without provision token', function () {
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
         'provision_token' => null,
+        'mysql_root_password' => 'test-mysql-password-123',
+        'deploy_user_password' => 'test-deploy-password-123',
     ]);
 
     Livewire::actingAs($this->user)
