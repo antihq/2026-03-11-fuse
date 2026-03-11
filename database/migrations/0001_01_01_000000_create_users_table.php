@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->text('ssh_public_key')->nullable();
+            $table->text('ssh_private_key')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

@@ -1,18 +1,16 @@
 <?php
 
 use App\Models\Server;
-use App\Models\Team;
 use App\Models\User;
 use App\Services\ProvisioningScriptGenerator;
 
 beforeEach(function () {
-    $user = User::factory()->create();
-    $this->team = Team::factory()->create(['user_id' => $user->id]);
+    $this->user = User::factory()->create();
 });
 
 test('swap size for 512MB RAM', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 512,
@@ -26,7 +24,7 @@ test('swap size for 512MB RAM', function () {
 
 test('swap size for 1024MB RAM', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 1024,
@@ -40,7 +38,7 @@ test('swap size for 1024MB RAM', function () {
 
 test('swap size for 2048MB RAM', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
@@ -54,7 +52,7 @@ test('swap size for 2048MB RAM', function () {
 
 test('swap size for 4096MB RAM', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 4096,
@@ -68,7 +66,7 @@ test('swap size for 4096MB RAM', function () {
 
 test('swap size for 8192MB RAM', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 8192,
@@ -82,7 +80,7 @@ test('swap size for 8192MB RAM', function () {
 
 test('swap size for 16384MB RAM defaults to 4096', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 16384,
@@ -96,7 +94,7 @@ test('swap size for 16384MB RAM defaults to 4096', function () {
 
 test('swappiness for small servers', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 512,
@@ -110,7 +108,7 @@ test('swappiness for small servers', function () {
 
 test('swappiness for medium servers', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
@@ -124,7 +122,7 @@ test('swappiness for medium servers', function () {
 
 test('swappiness for large servers', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 16384,
@@ -138,7 +136,7 @@ test('swappiness for large servers', function () {
 
 test('mysql max connections for small servers', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 512,
@@ -152,7 +150,7 @@ test('mysql max connections for small servers', function () {
 
 test('mysql max connections for 2GB servers', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
@@ -166,7 +164,7 @@ test('mysql max connections for 2GB servers', function () {
 
 test('mysql max connections for large servers', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 16384,
@@ -180,7 +178,7 @@ test('mysql max connections for large servers', function () {
 
 test('mysql innodb buffer pool is 50 percent of RAM', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
@@ -194,7 +192,7 @@ test('mysql innodb buffer pool is 50 percent of RAM', function () {
 
 test('mysql innodb buffer pool has minimum of 128', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 64,
@@ -208,7 +206,7 @@ test('mysql innodb buffer pool has minimum of 128', function () {
 
 test('php pool max children for 1GB server', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 1024,
@@ -222,7 +220,7 @@ test('php pool max children for 1GB server', function () {
 
 test('php pool max children for 4GB server', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 4096,
@@ -236,7 +234,7 @@ test('php pool max children for 4GB server', function () {
 
 test('generate returns bash script', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Production Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
@@ -256,7 +254,7 @@ test('generate returns bash script', function () {
 
 test('generate includes root ssh key', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
@@ -272,7 +270,7 @@ test('generate includes root ssh key', function () {
 
 test('generate includes sites user ssh keys', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
@@ -291,7 +289,7 @@ test('generate includes sites user ssh keys', function () {
 
 test('generate handles empty ssh keys gracefully', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,

@@ -57,4 +57,12 @@ class UserFactory extends Factory
             'two_factor_confirmed_at' => now(),
         ]);
     }
+
+    public function withSshKeys(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'ssh_public_key' => 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakePublicKeyForTesting test@example.com',
+            'ssh_private_key' => '-----BEGIN OPENSSH PRIVATE KEY-----'.PHP_EOL.'FakePrivateKeyForTesting'.PHP_EOL.'-----END OPENSSH PRIVATE KEY-----',
+        ]);
+    }
 }

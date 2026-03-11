@@ -8,7 +8,7 @@ new class extends Component
     #[Computed]
     public function servers()
     {
-        return auth()->user()->team->servers()->latest()->get();
+        return auth()->user()->servers()->latest()->get();
     }
 
     public function deleteServer(int $serverId): void

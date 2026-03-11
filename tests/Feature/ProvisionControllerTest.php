@@ -1,17 +1,15 @@
 <?php
 
 use App\Models\Server;
-use App\Models\Team;
 use App\Models\User;
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
-    $this->team = Team::factory()->create(['user_id' => $this->user->id]);
+    $this->user = User::factory()->withSshKeys()->create();
 });
 
 test('valid token returns provisioning script', function () {
-    $server = Server::create([
-        'team_id' => $this->team->id,
+    Server::create([
+        'user_id' => $this->user->id,
         'name' => 'Production Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
@@ -42,7 +40,7 @@ test('invalid token returns 410 gone', function () {
 
 test('token is nullified after first use', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
@@ -57,22 +55,19 @@ test('token is nullified after first use', function () {
     $this->get(route('provision.show', 'one-time-token'))->assertStatus(410);
 });
 
-test('script includes team root ssh key', function () {
-    $team = Team::factory()->create([
-        'user_id' => $this->user->id,
-        'ssh_public_key' => 'ssh-ed25519 AAAATEAM team@key',
-    ]);
+test('script includes user root ssh key', function () {
+    $user = User::factory()->withSshKeys()->create();
 
     Server::create([
-        'team_id' => $team->id,
+        'user_id' => $user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
-        'provision_token' => 'token-with-team-key',
+        'provision_token' => 'token-with-user-key',
     ]);
 
-    $response = $this->get(route('provision.show', 'token-with-team-key'));
+    $response = $this->get(route('provision.show', 'token-with-user-key'));
 
-    expect($response->getContent())->toContain('ssh-ed25519 AAAATEAM team@key');
+    expect($response->getContent())->toContain($user->ssh_public_key);
 });

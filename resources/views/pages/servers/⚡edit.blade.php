@@ -30,7 +30,7 @@ new class extends Component
     {
         $serverModel = Server::findOrFail($server);
 
-        if ($serverModel->team_id !== auth()->user()->team->id) {
+        if ($serverModel->user_id !== auth()->id()) {
             $this->redirect(route('servers.index'), navigate: true);
 
             return;
@@ -50,7 +50,7 @@ new class extends Component
 
         $this->validate(['authorized_keys' => [new ValidSshKeys]]);
 
-        $server = Server::where('team_id', auth()->user()->team->id)->findOrFail($this->serverId);
+        $server = Server::where('user_id', auth()->id())->findOrFail($this->serverId);
 
         $server->update([
             'name' => $this->name,

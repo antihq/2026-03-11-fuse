@@ -1,11 +1,10 @@
 <?php
 
-use App\Models\Team;
 use App\Models\User;
 use Livewire\Livewire;
 
 test('keys page is displayed', function () {
-    $user = User::factory()->has(Team::factory())->create();
+    $user = User::factory()->withSshKeys()->create();
 
     $this->actingAs($user);
 
@@ -13,24 +12,11 @@ test('keys page is displayed', function () {
 });
 
 test('keys page displays ssh keys', function () {
-    $user = User::factory()->has(
-        Team::factory()->state([
-            'ssh_public_key' => 'ssh-ed25519 AAAA... test@example.com',
-            'ssh_private_key' => '-----BEGIN OPENSSH PRIVATE KEY-----',
-        ])
-    )->create();
+    $user = User::factory()->withSshKeys()->create();
 
     $this->actingAs($user);
 
     Livewire::test('pages::settings.keys')
-        ->assertSee('ssh-ed25519 AAAA... test@example.com')
-        ->assertSee('-----BEGIN OPENSSH PRIVATE KEY-----');
-});
-
-test('user without team receives 404', function () {
-    $user = User::factory()->create();
-
-    $this->actingAs($user);
-
-    Livewire::test('pages::settings.keys')->assertStatus(404);
+        ->assertSee($user->ssh_public_key)
+        ->assertSee($user->ssh_private_key);
 });

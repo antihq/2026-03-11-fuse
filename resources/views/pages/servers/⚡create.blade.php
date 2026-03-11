@@ -27,7 +27,7 @@ new class extends Component
 
         $this->validate(['authorized_keys' => [new ValidSshKeys]]);
 
-        $server = auth()->user()->team->servers()->create([
+        $server = auth()->user()->servers()->create([
             'name' => $this->name,
             'ip_address' => $this->ip_address,
             'ram_mb' => (int) $this->ram_mb,

@@ -18,7 +18,7 @@ class ProvisionController extends Controller
 
         $server->update(['provision_token' => null]);
 
-        $rootSshKey = $server->team->ssh_public_key ?? '';
+        $rootSshKey = $server->user->ssh_public_key ?? '';
 
         $generator = new ProvisioningScriptGenerator($server, $rootSshKey);
         $script = $generator->generate();

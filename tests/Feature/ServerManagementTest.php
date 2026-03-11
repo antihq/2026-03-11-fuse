@@ -1,14 +1,12 @@
 <?php
 
 use App\Models\Server;
-use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Livewire\Livewire;
 
 beforeEach(function () {
     $this->user = User::factory()->create();
-    $this->team = Team::factory()->create(['user_id' => $this->user->id]);
 });
 
 test('guests cannot access servers index page', function () {
@@ -21,7 +19,7 @@ test('guests cannot access servers create page', function () {
 
 test('guests cannot access servers edit page', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 1024,
@@ -53,7 +51,7 @@ test('user can create a server', function () {
         ->call('save')
         ->assertRedirect(route('servers.provision', 1));
 
-    $server = Server::where('team_id', $this->team->id)->first();
+    $server = Server::where('user_id', $this->user->id)->first();
 
     expect($server)
         ->name->toBe('Production Web 1')
@@ -73,7 +71,7 @@ test('user can create a server without ssh keys', function () {
         ->call('save')
         ->assertRedirect(route('servers.provision', 1));
 
-    expect(Server::where('team_id', $this->team->id)->count())->toBe(1);
+    expect(Server::where('user_id', $this->user->id)->count())->toBe(1);
 });
 
 test('server creation validates required fields', function () {
@@ -122,7 +120,7 @@ test('valid ssh key formats are accepted', function () {
         ->call('save')
         ->assertHasNoErrors();
 
-    $server = Server::where('team_id', $this->team->id)->first();
+    $server = Server::where('user_id', $this->user->id)->first();
     expect($server->authorizedKeysCount())->toBe(2);
 });
 
@@ -130,7 +128,7 @@ test('user can edit a server', function () {
     $this->actingAs($this->user);
 
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Original Name',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 1024,
@@ -153,7 +151,7 @@ test('edit page validates required fields', function () {
     $this->actingAs($this->user);
 
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 1024,
@@ -171,7 +169,7 @@ test('edit page validates ip address format', function () {
     $this->actingAs($this->user);
 
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 1024,
@@ -187,7 +185,7 @@ test('edit page validates ssh key format', function () {
     $this->actingAs($this->user);
 
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 1024,
@@ -203,7 +201,7 @@ test('user can update server ssh keys', function () {
     $this->actingAs($this->user);
 
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 1024,
@@ -232,7 +230,7 @@ test('ecdsa ssh key formats are accepted', function () {
         ->call('save')
         ->assertHasNoErrors();
 
-    $server = Server::where('team_id', $this->team->id)->first();
+    $server = Server::where('user_id', $this->user->id)->first();
     expect($server->authorizedKeysCount())->toBe(3);
 });
 
@@ -246,7 +244,7 @@ test('user can delete a server from index page', function () {
     $this->actingAs($this->user);
 
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'To Delete',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 1024,
@@ -258,11 +256,10 @@ test('user can delete a server from index page', function () {
     expect(Server::find($server->id))->toBeNull();
 });
 
-test('user cannot edit servers from other teams', function () {
+test('user cannot edit servers from other users', function () {
     $otherUser = User::factory()->create();
-    $otherTeam = Team::factory()->create(['user_id' => $otherUser->id]);
     $otherServer = Server::create([
-        'team_id' => $otherTeam->id,
+        'user_id' => $otherUser->id,
         'name' => 'Other Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 1024,
@@ -274,11 +271,10 @@ test('user cannot edit servers from other teams', function () {
         ->assertRedirect(route('servers.index'));
 });
 
-test('user cannot delete servers from other teams', function () {
+test('user cannot delete servers from other users', function () {
     $otherUser = User::factory()->create();
-    $otherTeam = Team::factory()->create(['user_id' => $otherUser->id]);
     $otherServer = Server::create([
-        'team_id' => $otherTeam->id,
+        'user_id' => $otherUser->id,
         'name' => 'Other Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 1024,
@@ -322,7 +318,7 @@ test('sites user can contain lowercase letters numbers underscores and hyphens',
         ->call('save')
         ->assertHasNoErrors();
 
-    $server = Server::where('team_id', $this->team->id)->first();
+    $server = Server::where('user_id', $this->user->id)->first();
     expect($server->sites_user)->toBe('deploy_user-1');
 });
 
@@ -342,7 +338,7 @@ test('sites user can be updated via edit page', function () {
     $this->actingAs($this->user);
 
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 1024,

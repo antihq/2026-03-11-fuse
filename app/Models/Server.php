@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Server extends Model
 {
-    protected $fillable = ['team_id', 'name', 'ip_address', 'ram_mb', 'authorized_keys', 'provision_token', 'sites_user', 'provisioned_at'];
+    protected $fillable = ['user_id', 'name', 'ip_address', 'ram_mb', 'authorized_keys', 'provision_token', 'sites_user', 'provisioned_at'];
 
     protected function casts(): array
     {
@@ -17,9 +17,9 @@ class Server extends Model
         ];
     }
 
-    public function team(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(Team::class);
+        return $this->belongsTo(User::class);
     }
 
     public function authorizedKeysCount(): int

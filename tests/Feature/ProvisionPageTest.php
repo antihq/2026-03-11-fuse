@@ -1,18 +1,16 @@
 <?php
 
 use App\Models\Server;
-use App\Models\Team;
 use App\Models\User;
 use Livewire\Livewire;
 
 beforeEach(function () {
     $this->user = User::factory()->create();
-    $this->team = Team::factory()->create(['user_id' => $this->user->id]);
 });
 
 test('guests cannot access provision page', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
@@ -25,7 +23,7 @@ test('guests cannot access provision page', function () {
 
 test('authenticated users can access provision page', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
@@ -42,7 +40,7 @@ test('authenticated users can access provision page', function () {
 
 test('provision page displays provision url', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
@@ -57,7 +55,7 @@ test('provision page displays provision url', function () {
 
 test('regenerate token creates new token and updates url', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
@@ -75,7 +73,7 @@ test('regenerate token creates new token and updates url', function () {
 
 test('mark as provisioned sets provisioned_at and clears token', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
@@ -96,7 +94,7 @@ test('mark as provisioned sets provisioned_at and clears token', function () {
 
 test('regenerate token does nothing when server is already provisioned', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
@@ -115,7 +113,7 @@ test('regenerate token does nothing when server is already provisioned', functio
 
 test('provisioned server shows success message instead of command', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
@@ -133,7 +131,7 @@ test('provisioned server shows success message instead of command', function () 
 
 test('unprovisioned server shows provisioning command and mark button', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
@@ -150,7 +148,7 @@ test('unprovisioned server shows provisioning command and mark button', function
 
 test('provision page handles server without provision token', function () {
     $server = Server::create([
-        'team_id' => $this->team->id,
+        'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
