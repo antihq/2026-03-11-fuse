@@ -10,7 +10,14 @@ class Team extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'user_id'];
+    protected $fillable = ['name', 'user_id', 'ssh_public_key', 'ssh_private_key'];
+
+    protected function casts(): array
+    {
+        return [
+            'ssh_private_key' => 'encrypted',
+        ];
+    }
 
     public function user(): BelongsTo
     {
