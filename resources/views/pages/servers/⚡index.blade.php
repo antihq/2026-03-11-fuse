@@ -43,11 +43,20 @@ new class extends Component
             <flux:table.rows>
                 @foreach($this->servers as $server)
                     <flux:table.row :key="$server->id">
-                        <flux:table.cell variant="strong">{{ $server->name }}</flux:table.cell>
+                        <flux:table.cell variant="strong">
+                            @if($server->provisioned_at)
+                                <a href="{{ route('servers.show', $server) }}" wire:navigate class="hover:underline">{{ $server->name }}</a>
+                            @else
+                                {{ $server->name }}
+                            @endif
+                        </flux:table.cell>
                         <flux:table.cell>{{ $server->ip_address }}</flux:table.cell>
                         <flux:table.cell>{{ number_format($server->ram_mb) }} MB</flux:table.cell>
                         <flux:table.cell>{{ $server->authorizedKeysCount() }}</flux:table.cell>
                         <flux:table.cell>
+                            @if($server->provisioned_at)
+                                <flux:button size="sm" variant="ghost" href="{{ route('servers.show', $server) }}" wire:navigate>View</flux:button>
+                            @endif
                             <flux:button size="sm" variant="ghost" href="{{ route('servers.edit', $server) }}" wire:navigate>Edit</flux:button>
                             <flux:button size="sm" variant="ghost" wire:click="deleteServer({{ $server->id }})" wire:confirm="Are you sure you want to delete this server?">Delete</flux:button>
                         </flux:table.cell>

@@ -290,6 +290,39 @@ test('user cannot delete servers from other users', function () {
     expect(Server::find($otherServer->id))->not->toBeNull();
 });
 
+test('index shows view button and link for provisioned servers', function () {
+    $this->actingAs($this->user);
+
+    Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Provisioned Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    Livewire::test('pages::servers.index')
+        ->assertSee('View')
+        ->assertSee(route('servers.show', 1));
+});
+
+test('index hides view button for non-provisioned servers', function () {
+    $this->actingAs($this->user);
+
+    Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Pending Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => null,
+    ]);
+
+    $component = Livewire::test('pages::servers.index');
+
+    $html = $component->html();
+    expect($html)->not->toContain('servers.show');
+});
+
 test('sites user defaults to deploy', function () {
     $this->actingAs($this->user);
 
