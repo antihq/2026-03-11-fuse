@@ -51,7 +51,7 @@ test('user can create a server', function () {
         ->set('ram_mb', '2048')
         ->set('authorized_keys', 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI test@example.com')
         ->call('save')
-        ->assertRedirect(route('servers.index'));
+        ->assertRedirect(route('servers.provision', 1));
 
     $server = Server::where('team_id', $this->team->id)->first();
 
@@ -59,7 +59,8 @@ test('user can create a server', function () {
         ->name->toBe('Production Web 1')
         ->ip_address->toBe('192.168.1.100')
         ->ram_mb->toBe(2048)
-        ->authorized_keys->toBe('ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI test@example.com');
+        ->authorized_keys->toBe('ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI test@example.com')
+        ->provision_token->not->toBeNull();
 });
 
 test('user can create a server without ssh keys', function () {
@@ -70,7 +71,7 @@ test('user can create a server without ssh keys', function () {
         ->set('ip_address', '10.0.0.50')
         ->set('ram_mb', '4096')
         ->call('save')
-        ->assertRedirect(route('servers.index'));
+        ->assertRedirect(route('servers.provision', 1));
 
     expect(Server::where('team_id', $this->team->id)->count())->toBe(1);
 });
@@ -289,4 +290,69 @@ test('user cannot delete servers from other teams', function () {
         ->call('deleteServer', $otherServer->id);
 
     expect(Server::find($otherServer->id))->not->toBeNull();
+});
+
+test('sites user defaults to deploy', function () {
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::servers.create')
+        ->assertSet('sites_user', 'deploy');
+});
+
+test('sites user must start with lowercase letter', function () {
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::servers.create')
+        ->set('name', 'Test Server')
+        ->set('ip_address', '192.168.1.1')
+        ->set('ram_mb', '2048')
+        ->set('sites_user', '1invalid')
+        ->call('save')
+        ->assertHasErrors('sites_user');
+});
+
+test('sites user can contain lowercase letters numbers underscores and hyphens', function () {
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::servers.create')
+        ->set('name', 'Test Server')
+        ->set('ip_address', '192.168.1.1')
+        ->set('ram_mb', '2048')
+        ->set('sites_user', 'deploy_user-1')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $server = Server::where('team_id', $this->team->id)->first();
+    expect($server->sites_user)->toBe('deploy_user-1');
+});
+
+test('sites user cannot contain uppercase letters', function () {
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::servers.create')
+        ->set('name', 'Test Server')
+        ->set('ip_address', '192.168.1.1')
+        ->set('ram_mb', '2048')
+        ->set('sites_user', 'DeployUser')
+        ->call('save')
+        ->assertHasErrors('sites_user');
+});
+
+test('sites user can be updated via edit page', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'team_id' => $this->team->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'sites_user' => 'deploy',
+    ]);
+
+    Livewire::test('pages::servers.edit', ['server' => $server->id])
+        ->set('sites_user', 'webmaster')
+        ->call('save')
+        ->assertRedirect(route('servers.index'));
+
+    expect($server->fresh()->sites_user)->toBe('webmaster');
 });

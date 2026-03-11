@@ -20,6 +20,9 @@ new class extends Component
     #[Validate('required|integer|min:1')]
     public string $ram_mb = '';
 
+    #[Validate('required|string|min:1|max:32|regex:/^[a-z][a-z0-9_-]*$/')]
+    public string $sites_user = 'deploy';
+
     #[Validate('nullable|string')]
     public string $authorized_keys = '';
 
@@ -37,6 +40,7 @@ new class extends Component
         $this->name = $serverModel->name;
         $this->ip_address = $serverModel->ip_address;
         $this->ram_mb = (string) $serverModel->ram_mb;
+        $this->sites_user = $serverModel->sites_user;
         $this->authorized_keys = $serverModel->authorized_keys ?? '';
     }
 
@@ -52,6 +56,7 @@ new class extends Component
             'name' => $this->name,
             'ip_address' => $this->ip_address,
             'ram_mb' => (int) $this->ram_mb,
+            'sites_user' => $this->sites_user,
             'authorized_keys' => $this->authorized_keys ?: null,
         ]);
 
@@ -84,6 +89,14 @@ new class extends Component
             label="RAM (MB)"
             placeholder="2048"
             type="number"
+            required
+        />
+
+        <flux:input
+            wire:model="sites_user"
+            label="Sites User"
+            placeholder="deploy"
+            hint="Username that will own all hosted sites (lowercase, starts with letter)"
             required
         />
 

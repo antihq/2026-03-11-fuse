@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Server extends Model
 {
-    protected $fillable = ['team_id', 'name', 'ip_address', 'ram_mb', 'authorized_keys'];
+    protected $fillable = ['team_id', 'name', 'ip_address', 'ram_mb', 'authorized_keys', 'provision_token', 'sites_user'];
 
     protected function casts(): array
     {
