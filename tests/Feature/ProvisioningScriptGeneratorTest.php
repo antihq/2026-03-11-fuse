@@ -303,3 +303,23 @@ test('generate handles empty ssh keys gracefully', function () {
 
     expect($script)->toContain('Server Provisioning Script');
 });
+
+test('generate creates mysql user and database with sites_user variable', function () {
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 2048,
+        'sites_user' => 'customuser',
+    ]);
+
+    $generator = new ProvisioningScriptGenerator($server, '');
+
+    $script = $generator->generate();
+
+    expect($script)
+        ->toContain('SITES_USER="customuser"')
+        ->toContain("CREATE USER '\$SITES_USER'@'localhost'")
+        ->toContain("GRANT ALL PRIVILEGES ON *.* TO '\$SITES_USER'@'localhost'")
+        ->toContain('CREATE DATABASE $SITES_USER');
+});

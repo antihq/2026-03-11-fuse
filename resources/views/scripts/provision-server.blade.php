@@ -391,9 +391,9 @@ EOF
 
 service mysql restart
 
-mysql --user="root" --password="$MYSQL_ROOT_PASSWORD" -e "CREATE USER 'laravel'@'localhost' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD';"
-mysql --user="root" --password="$MYSQL_ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON *.* TO 'laravel'@'localhost' WITH GRANT OPTION;"
-mysql --user="root" --password="$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE laravel CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql --user="root" --password="$MYSQL_ROOT_PASSWORD" -e "CREATE USER '$SITES_USER'@'localhost' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD';"
+mysql --user="root" --password="$MYSQL_ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON *.* TO '$SITES_USER'@'localhost' WITH GRANT OPTION;"
+mysql --user="root" --password="$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE $SITES_USER CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql --user="root" --password="$MYSQL_ROOT_PASSWORD" -e "FLUSH PRIVILEGES;"
 
 rm -f mysql-apt-config_0.8.36-1_all.deb
@@ -618,9 +618,9 @@ echo "  Deploy User: $SITES_USER"
 echo "  Deploy Password: $DEPLOY_USER_PASSWORD"
 echo ""
 echo "  MySQL Root Password: $MYSQL_ROOT_PASSWORD"
-echo "  MySQL Laravel User: laravel"
+echo "  MySQL Laravel User: $SITES_USER"
 echo "  MySQL Laravel Password: $MYSQL_ROOT_PASSWORD"
-echo "  MySQL Laravel Database: laravel"
+echo "  MySQL Laravel Database: $SITES_USER"
 echo ""
 echo "Save these credentials securely!"
 echo "=========================================="
