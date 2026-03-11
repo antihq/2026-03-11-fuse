@@ -65,56 +65,15 @@ new class extends Component
 };
 ?>
 <div>
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-xl font-semibold">Edit Server</h1>
-    </div>
+    <h1 class="text-xl font-semibold mb-4">Edit Server</h1>
 
-    <form wire:submit="save" class="space-y-4">
-        <flux:input
-            wire:model="name"
-            label="Server Name"
-            placeholder="Production Web 1"
-            required
-        />
+    <form wire:submit="save" class="space-y-2">
+        <flux:input wire:model="name" label="Name" />
+        <flux:input wire:model="ip_address" label="IP Address" />
+        <flux:input wire:model="ram_mb" label="RAM (MB)" type="number" />
+        <flux:input wire:model="sites_user" label="Sites User" />
+        <flux:textarea wire:model="authorized_keys" label="SSH Keys" rows="3" />
 
-        <flux:input
-            wire:model="ip_address"
-            label="IP Address"
-            placeholder="192.168.1.100"
-            required
-        />
-
-        <flux:input
-            wire:model="ram_mb"
-            label="RAM (MB)"
-            placeholder="2048"
-            type="number"
-            required
-        />
-
-        <flux:input
-            wire:model="sites_user"
-            label="Sites User"
-            placeholder="deploy"
-            hint="Username that will own all hosted sites (lowercase, starts with letter)"
-            required
-        />
-
-        <flux:textarea
-            wire:model="authorized_keys"
-            label="Authorized SSH Keys"
-            placeholder="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... user@example.com"
-            hint="One public key per line"
-            rows="4"
-        />
-
-        @error('authorized_keys')
-            <flux:text class="text-red-500 text-sm">{{ $message }}</flux:text>
-        @enderror
-
-        <div class="flex gap-2">
-            <flux:button type="submit" variant="primary">Update Server</flux:button>
-            <flux:button variant="ghost" href="{{ route('servers.index') }}" wire:navigate>Cancel</flux:button>
-        </div>
+        <flux:button type="submit" variant="primary">Update</flux:button>
     </form>
 </div>

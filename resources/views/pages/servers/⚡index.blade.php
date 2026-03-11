@@ -32,30 +32,28 @@ new class extends Component
     @if($this->servers->isEmpty())
         <p class="text-zinc-500">No servers yet.</p>
     @else
-        <ul class="space-y-4">
-            @foreach($this->servers as $server)
-                <li wire:key="{{ $server->id }}" class="flex items-start justify-between">
-                    <div>
-                        <flux:heading size="lg">{{ $server->name }}</flux:heading>
-                        <p class="text-sm text-zinc-500">
-                            {{ $server->ip_address }} &middot; {{ number_format($server->ram_mb) }} MB RAM &middot; {{ $server->authorizedKeysCount() }} key{{ $server->authorizedKeysCount() !== 1 ? 's' : '' }}
-                        </p>
-                    </div>
-                    <div class="flex gap-2">
-                        <flux:button size="sm" variant="ghost" href="{{ route('servers.edit', $server) }}" wire:navigate>
-                            Edit
-                        </flux:button>
-                        <flux:button
-                            size="sm"
-                            variant="ghost"
-                            wire:click="deleteServer({{ $server->id }})"
-                            wire:confirm="Are you sure you want to delete this server?"
-                        >
-                            Delete
-                        </flux:button>
-                    </div>
-                </li>
-            @endforeach
-        </ul>
+        <flux:table>
+            <flux:table.columns>
+                <flux:table.column>Name</flux:table.column>
+                <flux:table.column>IP Address</flux:table.column>
+                <flux:table.column>RAM</flux:table.column>
+                <flux:table.column>Keys</flux:table.column>
+                <flux:table.column></flux:table.column>
+            </flux:table.columns>
+            <flux:table.rows>
+                @foreach($this->servers as $server)
+                    <flux:table.row :key="$server->id">
+                        <flux:table.cell variant="strong">{{ $server->name }}</flux:table.cell>
+                        <flux:table.cell>{{ $server->ip_address }}</flux:table.cell>
+                        <flux:table.cell>{{ number_format($server->ram_mb) }} MB</flux:table.cell>
+                        <flux:table.cell>{{ $server->authorizedKeysCount() }}</flux:table.cell>
+                        <flux:table.cell>
+                            <flux:button size="sm" variant="ghost" href="{{ route('servers.edit', $server) }}" wire:navigate>Edit</flux:button>
+                            <flux:button size="sm" variant="ghost" wire:click="deleteServer({{ $server->id }})" wire:confirm="Are you sure you want to delete this server?">Delete</flux:button>
+                        </flux:table.cell>
+                    </flux:table.row>
+                @endforeach
+            </flux:table.rows>
+        </flux:table>
     @endif
 </div>
