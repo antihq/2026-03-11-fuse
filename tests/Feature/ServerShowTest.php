@@ -2,6 +2,7 @@
 
 use App\Models\Server;
 use App\Models\Site;
+use App\Models\Task;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Process;
@@ -129,7 +130,10 @@ test('test connection shows success message when connection succeeds', function 
     ]);
 
     Process::fake([
-        '*' => Process::result(exitCode: 0, output: 'connected'),
+        '*' => Process::sequence()
+            ->push(Process::result(output: 'mkdir output', exitCode: 0))
+            ->push(Process::result(output: 'scp output', exitCode: 0))
+            ->push(Process::result(output: "Connected to test-server\nLinux test-server", exitCode: 0)),
     ]);
 
     Livewire::actingAs($user)
@@ -137,6 +141,14 @@ test('test connection shows success message when connection succeeds', function 
         ->call('testConnection')
         ->assertSet('connectionStatus', 'Connection successful!')
         ->assertSet('connectionSuccess', true);
+
+    $task = Task::where('user_id', $user->id)
+        ->where('server_id', $server->id)
+        ->first();
+
+    expect($task)->not->toBeNull()
+        ->and($task->status)->toBe('finished')
+        ->and($task->exit_code)->toBe(0);
 });
 
 test('test connection shows failure message when connection fails', function () {
@@ -150,7 +162,10 @@ test('test connection shows failure message when connection fails', function () 
     ]);
 
     Process::fake([
-        '*' => Process::result(exitCode: 255, output: 'Permission denied'),
+        '*' => Process::sequence()
+            ->push(Process::result(output: 'mkdir output', exitCode: 0))
+            ->push(Process::result(output: 'scp output', exitCode: 0))
+            ->push(Process::result(output: 'Permission denied', exitCode: 255)),
     ]);
 
     Livewire::actingAs($user)
@@ -158,6 +173,14 @@ test('test connection shows failure message when connection fails', function () 
         ->call('testConnection')
         ->assertSet('connectionSuccess', false)
         ->assertSet('connectionStatus', fn ($status) => str_contains($status, 'Permission denied'));
+
+    $task = Task::where('user_id', $user->id)
+        ->where('server_id', $server->id)
+        ->first();
+
+    expect($task)->not->toBeNull()
+        ->and($task->status)->toBe('finished')
+        ->and($task->exit_code)->toBe(255);
 });
 
 test('test connection shows error when user has no ssh key', function () {
@@ -174,6 +197,8 @@ test('test connection shows error when user has no ssh key', function () {
         ->call('testConnection')
         ->assertSet('connectionStatus', 'No SSH private key configured for your account.')
         ->assertSet('connectionSuccess', false);
+
+    expect(Task::where('user_id', $this->user->id)->count())->toBe(0);
 });
 
 test('show page displays sites section', function () {

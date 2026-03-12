@@ -14,4 +14,16 @@ class SecureShellCommand
             $script,
         ]);
     }
+
+    public static function forUpload(string $ip, string $keyPath, string $user, string $from, string $to): string
+    {
+        return sprintf(
+            'scp -i %s -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -P 22 %s %s@%s:%s',
+            $keyPath,
+            $from,
+            $user,
+            $ip,
+            $to
+        );
+    }
 }

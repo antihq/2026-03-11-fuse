@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Server;
-use App\Services\SshExecutor;
+use App\Models\Task;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -54,20 +54,24 @@ new class extends Component
             return;
         }
 
-        $response = SshExecutor::testConnection(
-            $server->ip_address,
-            'root',
-            $user->ssh_private_key
-        );
+        $task = Task::create([
+            'user_id' => $user->id,
+            'server_id' => $server->id,
+            'ssh_user' => 'root',
+            'script' => 'echo "Connected to $(hostname)" && uname -a',
+            'timeout' => 10,
+        ]);
 
-        if ($response->timedOut) {
+        $task->run();
+
+        if ($task->status === 'timeout') {
             $this->connectionStatus = 'Connection timed out.';
             $this->connectionSuccess = false;
-        } elseif ($response->exitCode === 0) {
+        } elseif ($task->exit_code === 0) {
             $this->connectionStatus = 'Connection successful!';
             $this->connectionSuccess = true;
         } else {
-            $this->connectionStatus = 'Connection failed: '.$response->output;
+            $this->connectionStatus = 'Connection failed: '.$task->output;
             $this->connectionSuccess = false;
         }
     }

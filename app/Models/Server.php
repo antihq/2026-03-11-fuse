@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Server extends Model
 {
+    use HasFactory;
+
     protected $fillable = ['user_id', 'name', 'ip_address', 'ram_mb', 'authorized_keys', 'provision_token', 'sites_user', 'provisioned_at', 'mysql_root_password', 'deploy_user_password'];
 
     protected $hidden = ['mysql_root_password', 'deploy_user_password'];

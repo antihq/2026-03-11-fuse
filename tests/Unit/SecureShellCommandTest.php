@@ -59,3 +59,54 @@ it('interpolates user and ip', function () {
 
     expect($command)->toContain('ubuntu@10.0.0.50');
 });
+
+it('builds scp command for upload', function () {
+    $command = SecureShellCommand::forUpload(
+        '192.168.1.1',
+        '/path/to/key',
+        'root',
+        '/local/script.sh',
+        '/remote/script.sh'
+    );
+
+    expect($command)->toContain('scp')
+        ->toContain('/local/script.sh')
+        ->toContain('root@192.168.1.1:/remote/script.sh');
+});
+
+it('scp command includes ssh options', function () {
+    $command = SecureShellCommand::forUpload(
+        '192.168.1.1',
+        '/path/to/key',
+        'root',
+        '/local/file',
+        '/remote/file'
+    );
+
+    expect($command)->toContain('StrictHostKeyChecking=no')
+        ->toContain('UserKnownHostsFile=/dev/null');
+});
+
+it('scp command uses port 22', function () {
+    $command = SecureShellCommand::forUpload(
+        '192.168.1.1',
+        '/path/to/key',
+        'root',
+        '/local/file',
+        '/remote/file'
+    );
+
+    expect($command)->toContain('-P 22');
+});
+
+it('scp command includes key path', function () {
+    $command = SecureShellCommand::forUpload(
+        '192.168.1.1',
+        '/home/user/.ssh/id_rsa',
+        'root',
+        '/local/file',
+        '/remote/file'
+    );
+
+    expect($command)->toContain('-i /home/user/.ssh/id_rsa');
+});
