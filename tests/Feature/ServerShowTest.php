@@ -3,6 +3,7 @@
 use App\Models\Server;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Process;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -114,4 +115,62 @@ test('user cannot delete servers from other users via show page', function () {
         ->assertRedirect(route('servers.index'));
 
     expect(Server::find($otherServer->id))->not->toBeNull();
+});
+
+test('test connection shows success message when connection succeeds', function () {
+    $user = User::factory()->withSshKeys()->create();
+    $server = Server::create([
+        'user_id' => $user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    Process::fake([
+        '*' => Process::result(exitCode: 0, output: 'connected'),
+    ]);
+
+    Livewire::actingAs($user)
+        ->test('pages::servers.show', ['server' => $server->id])
+        ->call('testConnection')
+        ->assertSet('connectionStatus', 'Connection successful!')
+        ->assertSet('connectionSuccess', true);
+});
+
+test('test connection shows failure message when connection fails', function () {
+    $user = User::factory()->withSshKeys()->create();
+    $server = Server::create([
+        'user_id' => $user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    Process::fake([
+        '*' => Process::result(exitCode: 255, output: 'Permission denied'),
+    ]);
+
+    Livewire::actingAs($user)
+        ->test('pages::servers.show', ['server' => $server->id])
+        ->call('testConnection')
+        ->assertSet('connectionSuccess', false)
+        ->assertSet('connectionStatus', fn ($status) => str_contains($status, 'Permission denied'));
+});
+
+test('test connection shows error when user has no ssh key', function () {
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    Livewire::actingAs($this->user)
+        ->test('pages::servers.show', ['server' => $server->id])
+        ->call('testConnection')
+        ->assertSet('connectionStatus', 'No SSH private key configured for your account.')
+        ->assertSet('connectionSuccess', false);
 });

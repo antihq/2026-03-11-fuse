@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Server;
+use App\Services\SshExecutor;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -9,6 +10,10 @@ new class extends Component
 {
     #[Locked]
     public int $serverId;
+
+    public ?string $connectionStatus = null;
+
+    public ?bool $connectionSuccess = null;
 
     private Server $serverModel;
 
@@ -37,6 +42,36 @@ new class extends Component
         return Server::findOrFail($this->serverId);
     }
 
+    public function testConnection(): void
+    {
+        $server = $this->server;
+        $user = auth()->user();
+
+        if (empty($user->ssh_private_key)) {
+            $this->connectionStatus = 'No SSH private key configured for your account.';
+            $this->connectionSuccess = false;
+
+            return;
+        }
+
+        $response = SshExecutor::testConnection(
+            $server->ip_address,
+            'root',
+            $user->ssh_private_key
+        );
+
+        if ($response->timedOut) {
+            $this->connectionStatus = 'Connection timed out.';
+            $this->connectionSuccess = false;
+        } elseif ($response->exitCode === 0) {
+            $this->connectionStatus = 'Connection successful!';
+            $this->connectionSuccess = true;
+        } else {
+            $this->connectionStatus = 'Connection failed: '.$response->output;
+            $this->connectionSuccess = false;
+        }
+    }
+
     public function delete(): void
     {
         $server = $this->server;
@@ -55,6 +90,7 @@ new class extends Component
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-xl font-semibold">{{ $this->server->name }}</h1>
         <div class="flex gap-2">
+            <flux:button variant="ghost" wire:click="testConnection" wire:loading.attr="disabled">Test Connection</flux:button>
             <flux:button variant="ghost" href="{{ route('servers.edit', $this->server) }}" wire:navigate>Edit</flux:button>
             <flux:button variant="danger" wire:click="delete" wire:confirm="Are you sure you want to delete this server?">Delete</flux:button>
         </div>
@@ -64,6 +100,12 @@ new class extends Component
         <flux:callout variant="success" icon="check-circle">
             This server has been provisioned.
         </flux:callout>
+
+        @if($connectionStatus)
+            <flux:callout variant="{{ $connectionSuccess ? 'success' : 'warning' }}">
+                {{ $connectionStatus }}
+            </flux:callout>
+        @endif
 
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
