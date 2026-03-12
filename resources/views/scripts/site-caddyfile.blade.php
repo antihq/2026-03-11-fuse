@@ -37,12 +37,4 @@ echo "Setting permissions..."
 chown -R $SITES_USER:$SITES_USER "$SITE_DIR"
 chmod 755 "$SITE_DIR"
 
-echo "Registering site with Caddy..."
-if ! grep -q "import /home/$SITES_USER/$HOSTNAME/Caddyfile" /etc/caddy/Sites.caddy; then
-    echo "import /home/$SITES_USER/$HOSTNAME/Caddyfile" >> /etc/caddy/Sites.caddy
-fi
-
-echo "Reloading Caddy..."
-sudo service caddy reload
-
-echo "Site $HOSTNAME configured successfully!"
+echo "Site Caddyfile created successfully!"

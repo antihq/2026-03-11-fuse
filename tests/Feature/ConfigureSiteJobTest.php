@@ -27,12 +27,15 @@ beforeEach(function () {
     ]);
 });
 
-test('handle updates site to configuring then active on task success', function () {
+test('handle creates two tasks and updates site to active on success', function () {
     Process::fake([
         '*' => Process::sequence()
             ->push(Process::result(output: 'mkdir output', exitCode: 0))
             ->push(Process::result(output: 'scp output', exitCode: 0))
-            ->push(Process::result(output: 'Site configured successfully', exitCode: 0)),
+            ->push(Process::result(output: 'Site Caddyfile created', exitCode: 0))
+            ->push(Process::result(output: 'mkdir output', exitCode: 0))
+            ->push(Process::result(output: 'scp output', exitCode: 0))
+            ->push(Process::result(output: 'Caddy configuration updated', exitCode: 0)),
     ]);
 
     $job = new ConfigureSite($this->site->id);
@@ -42,13 +45,15 @@ test('handle updates site to configuring then active on task success', function 
         ->status->toBe('active')
         ->configured_at->not->toBeNull();
 
-    $task = Task::where('server_id', $this->server->id)->first();
-    expect($task)
-        ->ssh_user->toBe('deploy')
-        ->exit_code->toBe(0);
+    $tasks = Task::where('server_id', $this->server->id)->orderBy('id')->get();
+    expect($tasks)->toHaveCount(2)
+        ->and($tasks[0])->ssh_user->toBe('deploy')
+        ->and($tasks[0])->exit_code->toBe(0)
+        ->and($tasks[1])->ssh_user->toBe('root')
+        ->and($tasks[1])->exit_code->toBe(0);
 });
 
-test('handle updates site to failed on task failure', function () {
+test('task 1 failure prevents task 2 from running', function () {
     Process::fake([
         '*' => Process::sequence()
             ->push(Process::result(output: 'mkdir output', exitCode: 0))
@@ -62,6 +67,32 @@ test('handle updates site to failed on task failure', function () {
     expect($this->site->fresh())
         ->status->toBe('failed')
         ->configured_at->toBeNull();
+
+    expect(Task::where('server_id', $this->server->id)->count())->toBe(1);
+});
+
+test('task 2 failure marks site as failed', function () {
+    Process::fake([
+        '*' => Process::sequence()
+            ->push(Process::result(output: 'mkdir output', exitCode: 0))
+            ->push(Process::result(output: 'scp output', exitCode: 0))
+            ->push(Process::result(output: 'Site Caddyfile created', exitCode: 0))
+            ->push(Process::result(output: 'mkdir output', exitCode: 0))
+            ->push(Process::result(output: 'scp output', exitCode: 0))
+            ->push(Process::result(output: 'Permission denied', exitCode: 1)),
+    ]);
+
+    $job = new ConfigureSite($this->site->id);
+    $job->handle();
+
+    expect($this->site->fresh())
+        ->status->toBe('failed')
+        ->configured_at->toBeNull();
+
+    $tasks = Task::where('server_id', $this->server->id)->orderBy('id')->get();
+    expect($tasks)->toHaveCount(2)
+        ->and($tasks[0])->exit_code->toBe(0)
+        ->and($tasks[1])->exit_code->toBe(1);
 });
 
 test('handle updates site to failed when user has no ssh key', function () {
@@ -93,22 +124,35 @@ test('handle updates site to failed when user has no ssh key', function () {
     expect(Task::where('server_id', $server->id)->count())->toBe(0);
 });
 
-test('generate script produces correct caddyfile', function () {
-    $job = new ConfigureSite($this->site->id);
-
-    $method = new ReflectionMethod($job, 'generateScript');
-    $method->setAccessible(true);
-
-    $script = $method->invoke($job, $this->site, $this->server);
+test('site caddyfile script contains expected content', function () {
+    $script = view('scripts.site-caddyfile', [
+        'hostname' => 'example.com',
+        'phpVersion' => '8.4',
+        'sitesUser' => 'deploy',
+    ])->render();
 
     expect($script)
         ->toContain('SITES_USER="deploy"')
         ->toContain('HOSTNAME="example.com"')
         ->toContain('PHP_VERSION="8.4"')
-        ->toContain('SITE_DIR="/home/$SITES_USER/$HOSTNAME"')
         ->toContain('root * /home/deploy/example.com/public')
         ->toContain('php8.4-fpm.sock')
-        ->toContain('sudo service caddy reload');
+        ->not->toContain('service caddy reload')
+        ->not->toContain('/etc/caddy/Sites.caddy');
+});
+
+test('update caddy imports script contains expected content', function () {
+    $script = view('scripts.update-caddy-imports', [
+        'hostname' => 'example.com',
+        'sitesUser' => 'deploy',
+    ])->render();
+
+    expect($script)
+        ->toContain('SITES_USER="deploy"')
+        ->toContain('HOSTNAME="example.com"')
+        ->toContain('/etc/caddy/Sites.caddy')
+        ->toContain('service caddy reload')
+        ->toContain('import /home/$SITES_USER/$HOSTNAME/Caddyfile');
 });
 
 test('failed method updates site status', function () {

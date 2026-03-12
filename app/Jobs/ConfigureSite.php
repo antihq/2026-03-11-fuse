@@ -8,7 +8,6 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Support\Facades\Blade;
 use Throwable;
 
 class ConfigureSite implements ShouldQueue
@@ -39,19 +38,40 @@ class ConfigureSite implements ShouldQueue
 
         $site->update(['status' => 'configuring']);
 
-        $script = $this->generateScript($site, $server);
-
-        $task = Task::create([
+        $siteTask = Task::create([
             'user_id' => $user->id,
             'server_id' => $server->id,
             'ssh_user' => $server->sites_user,
-            'script' => $script,
+            'script' => view('scripts.site-caddyfile', [
+                'hostname' => $site->hostname,
+                'phpVersion' => $site->php_version,
+                'sitesUser' => $server->sites_user,
+            ])->render(),
             'timeout' => 60,
         ]);
 
-        $task->run();
+        $siteTask->run();
 
-        if ($task->successful()) {
+        if (! $siteTask->successful()) {
+            $site->update(['status' => 'failed']);
+
+            return;
+        }
+
+        $importsTask = Task::create([
+            'user_id' => $user->id,
+            'server_id' => $server->id,
+            'ssh_user' => 'root',
+            'script' => view('scripts.update-caddy-imports', [
+                'hostname' => $site->hostname,
+                'sitesUser' => $server->sites_user,
+            ])->render(),
+            'timeout' => 30,
+        ]);
+
+        $importsTask->run();
+
+        if ($importsTask->successful()) {
             $site->update([
                 'status' => 'active',
                 'configured_at' => now(),
@@ -59,17 +79,6 @@ class ConfigureSite implements ShouldQueue
         } else {
             $site->update(['status' => 'failed']);
         }
-    }
-
-    protected function generateScript(Site $site, $server): string
-    {
-        $template = file_get_contents(resource_path('views/scripts/site-caddyfile.blade.php'));
-
-        return Blade::render($template, [
-            'hostname' => $site->hostname,
-            'phpVersion' => $site->php_version,
-            'sitesUser' => $server->sites_user,
-        ]);
     }
 
     public function failed(?Throwable $e): void
