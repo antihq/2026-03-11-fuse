@@ -268,6 +268,24 @@ test('generate includes root ssh key', function () {
     expect($script)->toContain('ssh-ed25519 AAAAROOT root@key');
 });
 
+test('root ssh key is authorized for both root and sites user', function () {
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 2048,
+        'sites_user' => 'deploy',
+    ]);
+
+    $generator = new ProvisioningScriptGenerator($server, 'ssh-ed25519 AAAAROOT root@key');
+
+    $script = $generator->generate();
+
+    expect($script)
+        ->toContain('/root/.ssh/authorized_keys')
+        ->toContain("cat <<'ROOTKEY' >> /home/\$SITES_USER/.ssh/authorized_keys\nssh-ed25519 AAAAROOT root@key\nROOTKEY");
+});
+
 test('generate includes sites user ssh keys', function () {
     $server = Server::create([
         'user_id' => $this->user->id,

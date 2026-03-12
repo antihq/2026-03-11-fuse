@@ -271,6 +271,13 @@ USERKEY
 @endforeach
 @endif
 
+@if(!empty($rootSshKey))
+cat <<'ROOTKEY' >> /home/$SITES_USER/.ssh/authorized_keys
+{{ $rootSshKey }}
+ROOTKEY
+
+@endif
+
 echo "Add known hosts for Git providers"
 
 ssh-keyscan -H github.com >> /home/$SITES_USER/.ssh/known_hosts
