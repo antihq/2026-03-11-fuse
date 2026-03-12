@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\DeploySite;
+use App\Jobs\UninstallSite;
 use App\Models\Server;
 use App\Models\Task;
 use Livewire\Attributes\Computed;
@@ -86,6 +87,21 @@ new class extends Component
         }
 
         DeploySite::dispatch($site->id);
+    }
+
+    public function deleteSite(int $siteId): void
+    {
+        $site = $this->server->sites()->findOrFail($siteId);
+
+        $this->authorize('delete', $site);
+
+        $hostname = $site->hostname;
+
+        $site->delete();
+
+        UninstallSite::dispatch($this->serverId, $hostname);
+
+        session()->flash('status', 'Site deleted and will be removed from server shortly.');
     }
 
     public function delete(): void
@@ -191,11 +207,16 @@ new class extends Component
                                     @endif
                                 </flux:table.cell>
                                 <flux:table.cell>
-                                    @if($site->status === 'ready')
-                                        <flux:button size="sm" wire:click="deploy({{ $site->id }})" wire:confirm="Deploy {{ $site->hostname }}?">
-                                            Deploy
+                                    <div class="flex gap-2">
+                                        @if($site->status === 'ready')
+                                            <flux:button size="sm" wire:click="deploy({{ $site->id }})" wire:confirm="Deploy {{ $site->hostname }}?">
+                                                Deploy
+                                            </flux:button>
+                                        @endif
+                                        <flux:button size="sm" variant="danger" wire:click="deleteSite({{ $site->id }})" wire:confirm="Delete {{ $site->hostname }}? This cannot be undone.">
+                                            Delete
                                         </flux:button>
-                                    @endif
+                                    </div>
                                 </flux:table.cell>
                             </flux:table.row>
                         @endforeach

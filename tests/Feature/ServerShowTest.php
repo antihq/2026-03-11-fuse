@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\DeploySite;
+use App\Jobs\UninstallSite;
 use App\Models\Server;
 use App\Models\Site;
 use App\Models\Task;
@@ -480,4 +481,118 @@ test('deploy method does nothing for non ready site', function () {
         ->call('deploy', $site->id);
 
     Bus::assertNotDispatched(DeploySite::class);
+});
+
+test('delete site dispatches uninstall job with correct params', function () {
+    Bus::fake();
+
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    $site = Site::create([
+        'server_id' => $server->id,
+        'hostname' => 'delete-me.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'active',
+    ]);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->call('deleteSite', $site->id);
+
+    Bus::assertDispatched(UninstallSite::class, fn ($job) => $job->serverId === $server->id && $job->hostname === 'delete-me.com');
+});
+
+test('delete site removes site from database', function () {
+    Bus::fake();
+
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    $site = Site::create([
+        'server_id' => $server->id,
+        'hostname' => 'delete-me.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'active',
+    ]);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->call('deleteSite', $site->id);
+
+    expect(Site::find($site->id))->toBeNull();
+});
+
+test('user cannot delete sites from other users servers', function () {
+    Bus::fake();
+
+    $otherUser = User::factory()->create();
+    $otherServer = Server::create([
+        'user_id' => $otherUser->id,
+        'name' => 'Other Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    $site = Site::create([
+        'server_id' => $otherServer->id,
+        'hostname' => 'other-site.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'active',
+    ]);
+
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::servers.show', ['server' => $otherServer->id])
+        ->assertRedirect(route('servers.index'));
+
+    Bus::assertNotDispatched(UninstallSite::class);
+    expect(Site::find($site->id))->not->toBeNull();
+});
+
+test('show page displays delete button for sites', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    Site::create([
+        'server_id' => $server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'active',
+    ]);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->assertSee('Delete');
 });
