@@ -12,6 +12,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('servers/{server}', 'pages::servers.show')->name('servers.show');
     Route::livewire('servers/{server}/edit', 'pages::servers.edit')->name('servers.edit');
     Route::livewire('servers/{server}/provision', 'pages::servers.provision')->name('servers.provision');
+    Route::livewire('servers/{server}/sites/create', 'pages::sites.create')->name('servers.sites.create');
 });
 
 Route::get('/provision/{token}', [ProvisionController::class, 'show'])->name('provision.show');

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Server;
+use App\Models\Site;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Process;
@@ -173,4 +174,76 @@ test('test connection shows error when user has no ssh key', function () {
         ->call('testConnection')
         ->assertSet('connectionStatus', 'No SSH private key configured for your account.')
         ->assertSet('connectionSuccess', false);
+});
+
+test('show page displays sites section', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->assertSee('Sites');
+});
+
+test('show page shows no sites message when empty', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->assertSee('No sites configured yet.');
+});
+
+test('show page lists sites with hostname php version and branch', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    Site::create([
+        'server_id' => $server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.3',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'develop',
+    ]);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->assertSee('example.com')
+        ->assertSee('8.3')
+        ->assertSee('develop');
+});
+
+test('show page has add site button linking to create page', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->assertSee('Add Site')
+        ->assertSee(route('servers.sites.create', $server));
 });
