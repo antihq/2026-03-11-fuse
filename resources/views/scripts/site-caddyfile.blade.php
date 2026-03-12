@@ -7,31 +7,15 @@ PHP_VERSION="{{ $phpVersion }}"
 SITE_DIR="/home/$SITES_USER/$HOSTNAME"
 
 echo "Creating site directory structure..."
-mkdir -p "$SITE_DIR/public"
 mkdir -p "$SITE_DIR/repository"
-
-echo "Creating maintenance page..."
-cat > "$SITE_DIR/public/maintenance.html" << 'MAINTENANCE'
-{!! $maintenancePage !!}
-MAINTENANCE
 
 echo "Generating Caddyfile..."
 
 cat > "$SITE_DIR/Caddyfile" << 'CADDYFILE'
 {{ $hostname }} {
-    root * /home/{{ $sitesUser }}/{{ $hostname }}/public
+    root * /home/{{ $sitesUser }}/{{ $hostname }}/repository/public
 
-    @maintenance {
-        path /
-        not file {
-            try_files {path} {path}/index.php
-        }
-    }
-    rewrite @maintenance /maintenance.html
-
-    php_fastcgi unix//run/php/php{{ $phpVersion }}-fpm.sock {
-        try_files {path} {path}/index.php /maintenance.html
-    }
+    php_fastcgi unix//run/php/php{{ $phpVersion }}-fpm.sock
     file_server
 
     encode gzip zstd

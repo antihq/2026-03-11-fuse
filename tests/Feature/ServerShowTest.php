@@ -596,3 +596,29 @@ test('show page displays delete button for sites', function () {
     Livewire::test('pages::servers.show', ['server' => $server->id])
         ->assertSee('Delete');
 });
+
+test('show page displays settings link for sites', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    $site = Site::create([
+        'server_id' => $server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'active',
+    ]);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->assertSee('Settings')
+        ->assertSee(route('servers.sites.settings', [$server, $site]));
+});

@@ -106,10 +106,8 @@ test('deploy script contains expected content', function () {
         ->toContain('REPOSITORY_BRANCH="main"')
         ->toContain('PHP_VERSION="8.4"')
         ->toContain('git clone')
-        ->toContain('Installing Composer dependencies')
-        ->toContain('npm run build')
-        ->toContain('artisan config:cache')
-        ->toContain('maintenance.html');
+        ->toContain('git pull origin')
+        ->toContain('Setting permissions');
 });
 
 test('deploy script creates repository directory', function () {
@@ -124,7 +122,7 @@ test('deploy script creates repository directory', function () {
     expect($script)->toContain('REPO_DIR="$SITE_DIR/repository"');
 });
 
-test('deploy script removes maintenance page on completion', function () {
+test('deploy script uses git pull for existing repository', function () {
     $script = view('scripts.deploy-site', [
         'hostname' => 'example.com',
         'sitesUser' => 'deploy',
@@ -134,5 +132,84 @@ test('deploy script removes maintenance page on completion', function () {
     ])->render();
 
     expect($script)
-        ->toContain('rm -f "$PUBLIC_DIR/maintenance.html"');
+        ->toContain('git pull origin $REPOSITORY_BRANCH')
+        ->not->toContain('git reset --hard');
+});
+
+test('deploy script includes before hook when provided', function () {
+    $script = view('scripts.deploy-site', [
+        'hostname' => 'example.com',
+        'sitesUser' => 'deploy',
+        'repositoryUrl' => 'git@github.com:user/repo.git',
+        'repositoryBranch' => 'main',
+        'phpVersion' => '8.4',
+        'hookBeforeUpdatingRepository' => 'echo "before hook"',
+    ])->render();
+
+    expect($script)
+        ->toContain('Running hook before updating repository')
+        ->toContain('echo "before hook"');
+});
+
+test('deploy script includes after hook when provided', function () {
+    $script = view('scripts.deploy-site', [
+        'hostname' => 'example.com',
+        'sitesUser' => 'deploy',
+        'repositoryUrl' => 'git@github.com:user/repo.git',
+        'repositoryBranch' => 'main',
+        'phpVersion' => '8.4',
+        'hookAfterUpdatingRepository' => 'echo "after hook"',
+    ])->render();
+
+    expect($script)
+        ->toContain('Running hook after updating repository')
+        ->toContain('echo "after hook"');
+});
+
+test('deploy script does not include hooks when not provided', function () {
+    $script = view('scripts.deploy-site', [
+        'hostname' => 'example.com',
+        'sitesUser' => 'deploy',
+        'repositoryUrl' => 'git@github.com:user/repo.git',
+        'repositoryBranch' => 'main',
+        'phpVersion' => '8.4',
+    ])->render();
+
+    expect($script)
+        ->not->toContain('Running hook before updating repository')
+        ->not->toContain('Running hook after updating repository');
+});
+
+test('handle passes site hooks to deploy script', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'hooked.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'ready',
+        'hook_before_updating_repository' => 'echo "custom before"',
+        'hook_after_updating_repository' => 'echo "custom after"',
+    ]);
+
+    Process::fake([
+        '*' => Process::sequence()
+            ->push(Process::result(output: 'mkdir output', exitCode: 0))
+            ->push(Process::result(output: 'scp output', exitCode: 0))
+            ->push(Process::result(output: 'Background script started', exitCode: 0)),
+    ]);
+
+    $job = new DeploySite($site->id);
+    $job->handle();
+
+    $task = Task::where('server_id', $this->server->id)
+        ->where('ssh_user', 'deploy')
+        ->first();
+
+    expect($task->script)
+        ->toContain('echo "custom before"')
+        ->toContain('echo "custom after"')
+        ->toContain('Running hook before updating repository')
+        ->toContain('Running hook after updating repository');
 });

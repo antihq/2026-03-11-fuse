@@ -232,3 +232,36 @@ test('redirects to server show after creation', function () {
         ->call('save')
         ->assertRedirect(route('servers.show', $this->server->id));
 });
+
+test('site creation pre-fills hook_after_updating_repository with default content', function () {
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.create', ['server' => $this->server->id])
+        ->set('hostname', 'example.com')
+        ->set('repository_url', 'git@github.com:user/repo.git')
+        ->set('repository_branch', 'main')
+        ->call('save');
+
+    $site = Site::where('hostname', 'example.com')->first();
+
+    expect($site->hook_after_updating_repository)
+        ->toContain('Installing Composer dependencies')
+        ->toContain('artisan config:cache');
+});
+
+test('site creation uses correct PHP version in default hook', function () {
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.create', ['server' => $this->server->id])
+        ->set('hostname', 'example.com')
+        ->set('php_version', '8.3')
+        ->set('repository_url', 'git@github.com:user/repo.git')
+        ->set('repository_branch', 'main')
+        ->call('save');
+
+    $site = Site::where('hostname', 'example.com')->first();
+
+    expect($site->hook_after_updating_repository)
+        ->toContain('php8.3')
+        ->not->toContain('php8.4');
+});

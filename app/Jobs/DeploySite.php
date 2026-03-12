@@ -55,6 +55,8 @@ class DeploySite implements ShouldQueue
                 'repositoryUrl' => $site->repository_url,
                 'repositoryBranch' => $site->repository_branch,
                 'phpVersion' => $site->php_version,
+                'hookBeforeUpdatingRepository' => $site->hook_before_updating_repository,
+                'hookAfterUpdatingRepository' => $site->hook_after_updating_repository,
             ])->render(),
             'timeout' => 240,
             'options' => [

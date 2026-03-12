@@ -208,6 +208,9 @@ new class extends Component
                                 </flux:table.cell>
                                 <flux:table.cell>
                                     <div class="flex gap-2">
+                                        <flux:button size="sm" variant="ghost" href="{{ route('servers.sites.settings', [$this->server, $site]) }}" wire:navigate>
+                                            Settings
+                                        </flux:button>
                                         @if($site->status === 'ready')
                                             <flux:button size="sm" wire:click="deploy({{ $site->id }})" wire:confirm="Deploy {{ $site->hostname }}?">
                                                 Deploy

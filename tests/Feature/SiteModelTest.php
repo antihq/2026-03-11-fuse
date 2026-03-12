@@ -108,3 +108,71 @@ test('site deployed_at defaults to null', function () {
 
     expect($site->deployed_at)->toBeNull();
 });
+
+test('site hook_before_updating_repository can be set', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'hooks.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'hook_before_updating_repository' => 'echo "before"',
+    ]);
+
+    expect($site->hook_before_updating_repository)->toBe('echo "before"');
+});
+
+test('site hook_after_updating_repository can be set', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'hooks.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'hook_after_updating_repository' => 'echo "after"',
+    ]);
+
+    expect($site->hook_after_updating_repository)->toBe('echo "after"');
+});
+
+test('defaultAfterHook returns content with correct PHP version', function () {
+    $hook = Site::defaultAfterHook('8.3');
+
+    expect($hook)
+        ->toContain('php8.3')
+        ->toContain('$(which composer)')
+        ->toContain('npm install')
+        ->toContain('artisan config:cache');
+});
+
+test('defaultAfterHook includes composer install command', function () {
+    $hook = Site::defaultAfterHook('8.4');
+
+    expect($hook)
+        ->toContain('Installing Composer dependencies')
+        ->toContain('install --no-dev --no-interaction --prefer-dist --optimize-autoloader');
+});
+
+test('defaultAfterHook includes npm commands', function () {
+    $hook = Site::defaultAfterHook('8.4');
+
+    expect($hook)
+        ->toContain('Installing NPM dependencies')
+        ->toContain('npm install')
+        ->toContain('npm run build');
+});
+
+test('defaultAfterHook includes Laravel artisan commands', function () {
+    $hook = Site::defaultAfterHook('8.4');
+
+    expect($hook)
+        ->toContain('Setting up Laravel application')
+        ->toContain('artisan key:generate')
+        ->toContain('artisan config:cache')
+        ->toContain('artisan route:cache')
+        ->toContain('artisan view:cache')
+        ->toContain('artisan event:cache')
+        ->toContain('artisan storage:link');
+});

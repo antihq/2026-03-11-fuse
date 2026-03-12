@@ -2,6 +2,7 @@
 
 use App\Jobs\ConfigureSite;
 use App\Models\Server;
+use App\Models\Site;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
@@ -63,6 +64,7 @@ new class extends Component
             'size' => 'large',
             'repository_url' => $this->repository_url,
             'repository_branch' => $this->repository_branch,
+            'hook_after_updating_repository' => Site::defaultAfterHook($this->php_version),
         ]);
 
         ConfigureSite::dispatch($site->id);

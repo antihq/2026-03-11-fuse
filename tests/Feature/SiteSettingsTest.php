@@ -1,0 +1,95 @@
+<?php
+
+use App\Models\Server;
+use App\Models\Site;
+use App\Models\User;
+use Livewire\Livewire;
+
+beforeEach(function () {
+    $this->user = User::factory()->withSshKeys()->create();
+    $this->server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 2048,
+        'sites_user' => 'deploy',
+        'provisioned_at' => now(),
+    ]);
+    $this->site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'hook_after_updating_repository' => 'echo "test hook"',
+        'status' => 'ready',
+    ]);
+});
+
+test('guests cannot access site settings page', function () {
+    $this->get(route('servers.sites.settings', [$this->server, $this->site]))
+        ->assertRedirect(route('login'));
+});
+
+test('user cannot access settings for another users site', function () {
+    $anotherUser = User::factory()->create();
+    $anotherServer = Server::create([
+        'user_id' => $anotherUser->id,
+        'name' => 'Another Server',
+        'ip_address' => '10.0.0.2',
+        'ram_mb' => 2048,
+        'sites_user' => 'deploy',
+        'provisioned_at' => now(),
+    ]);
+    $anotherSite = Site::create([
+        'server_id' => $anotherServer->id,
+        'hostname' => 'another.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'ready',
+    ]);
+
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', ['server' => $anotherServer->id, 'site' => $anotherSite->id])
+        ->assertForbidden();
+});
+
+test('settings page is displayed', function () {
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+        ->assertSee($this->site->hostname)
+        ->assertSee('Hook: Before Updating Repository')
+        ->assertSee('Hook: After Updating Repository');
+});
+
+test('hooks can be updated', function () {
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+        ->set('hook_before_updating_repository', 'echo "before"')
+        ->set('hook_after_updating_repository', 'echo "after"')
+        ->call('save')
+        ->assertRedirect(route('servers.sites.settings', [$this->server, $this->site]));
+
+    expect($this->site->fresh())
+        ->hook_before_updating_repository->toBe('echo "before"')
+        ->hook_after_updating_repository->toBe('echo "after"');
+});
+test('empty hooks can be saved', function () {
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+        ->set('hook_before_updating_repository', '')
+        ->set('hook_after_updating_repository', '')
+        ->call('save')
+        ->assertRedirect(route('servers.sites.settings', [$this->server, $this->site]));
+
+    expect($this->site->fresh())
+        ->hook_before_updating_repository->toBeNull()
+        ->hook_after_updating_repository->toBeNull();
+});
