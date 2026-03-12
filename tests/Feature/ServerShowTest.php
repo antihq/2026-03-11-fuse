@@ -272,3 +272,50 @@ test('show page has add site button linking to create page', function () {
         ->assertSee('Add Site')
         ->assertSee(route('servers.sites.create', $server));
 });
+
+test('show page displays site status', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    Site::create([
+        'server_id' => $server->id,
+        'hostname' => 'active.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'active',
+    ]);
+
+    Site::create([
+        'server_id' => $server->id,
+        'hostname' => 'failed.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'failed',
+    ]);
+
+    Site::create([
+        'server_id' => $server->id,
+        'hostname' => 'pending.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'pending',
+    ]);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->assertSee('Active')
+        ->assertSee('Failed')
+        ->assertSee('Pending');
+});

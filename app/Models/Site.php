@@ -14,12 +14,15 @@ class Site extends Model
         'size',
         'repository_url',
         'repository_branch',
+        'status',
+        'configured_at',
     ];
 
     protected function casts(): array
     {
         return [
             'server_id' => 'integer',
+            'configured_at' => 'datetime',
         ];
     }
 

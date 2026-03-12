@@ -64,3 +64,18 @@ test('sites are deleted when server is deleted', function () {
 
     expect(Site::find($site->id))->toBeNull();
 });
+
+test('site defaults status to pending', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'pending.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+    ]);
+
+    $site->refresh();
+
+    expect($site->status)->toBe('pending');
+});

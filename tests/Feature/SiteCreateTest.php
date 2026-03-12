@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\ConfigureSite;
 use App\Models\Server;
 use App\Models\Site;
 use App\Models\User;
@@ -168,6 +169,8 @@ test('site creation validates php_version', function () {
 });
 
 test('user can create site with valid data', function () {
+    Bus::fake();
+
     $this->actingAs($this->user);
 
     Livewire::test('pages::sites.create', ['server' => $this->server->id])
@@ -185,7 +188,10 @@ test('user can create site with valid data', function () {
         ->php_version->toBe('8.3')
         ->size->toBe('large')
         ->repository_url->toBe('git@github.com:user/repo.git')
-        ->repository_branch->toBe('develop');
+        ->repository_branch->toBe('develop')
+        ->status->toBe('pending');
+
+    Bus::assertDispatched(ConfigureSite::class, fn ($job) => $job->siteId === $site->id);
 });
 
 test('site defaults php version to 8.4', function () {

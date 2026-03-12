@@ -150,6 +150,7 @@ new class extends Component
                         <flux:table.column>Hostname</flux:table.column>
                         <flux:table.column>PHP</flux:table.column>
                         <flux:table.column>Branch</flux:table.column>
+                        <flux:table.column>Status</flux:table.column>
                     </flux:table.columns>
                     <flux:table.rows>
                         @foreach($this->server->sites as $site)
@@ -160,6 +161,17 @@ new class extends Component
                                 <flux:table.cell>{{ $site->php_version }}</flux:table.cell>
                                 <flux:table.cell>
                                     <span class="font-mono text-sm">{{ $site->repository_branch }}</span>
+                                </flux:table.cell>
+                                <flux:table.cell>
+                                    @if($site->status === 'active')
+                                        <span class="text-green-600">Active</span>
+                                    @elseif($site->status === 'configuring')
+                                        <span class="text-yellow-600">Configuring...</span>
+                                    @elseif($site->status === 'failed')
+                                        <span class="text-red-600">Failed</span>
+                                    @else
+                                        <span class="text-zinc-500">Pending</span>
+                                    @endif
                                 </flux:table.cell>
                             </flux:table.row>
                         @endforeach

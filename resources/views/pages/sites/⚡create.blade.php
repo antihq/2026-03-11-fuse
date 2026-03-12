@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\ConfigureSite;
 use App\Models\Server;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
@@ -56,13 +57,15 @@ new class extends Component
             'hostname' => 'unique:sites,hostname,NULL,id,server_id,'.$this->serverId,
         ]);
 
-        $this->server()->sites()->create([
+        $site = $this->server()->sites()->create([
             'hostname' => $this->hostname,
             'php_version' => $this->php_version,
             'size' => 'large',
             'repository_url' => $this->repository_url,
             'repository_branch' => $this->repository_branch,
         ]);
+
+        ConfigureSite::dispatch($site->id);
 
         $this->redirect(route('servers.show', $this->serverId), navigate: true);
     }
