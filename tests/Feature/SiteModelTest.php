@@ -79,3 +79,32 @@ test('site defaults status to pending', function () {
 
     expect($site->status)->toBe('pending');
 });
+
+test('site deployed_at can be set and is cast to datetime', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'deployed.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'deployed_at' => now(),
+    ]);
+
+    expect($site->deployed_at)
+        ->not->toBeNull()
+        ->toBeInstanceOf(DateTimeInterface::class);
+});
+
+test('site deployed_at defaults to null', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'notdeployed.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+    ]);
+
+    expect($site->deployed_at)->toBeNull();
+});

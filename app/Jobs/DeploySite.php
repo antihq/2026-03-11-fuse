@@ -10,7 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Throwable;
 
-class ConfigureSite implements ShouldQueue
+class DeploySite implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
@@ -18,7 +18,7 @@ class ConfigureSite implements ShouldQueue
 
     public int $backoff = 10;
 
-    public int $timeout = 120;
+    public int $timeout = 300;
 
     public function __construct(
         public int $siteId
@@ -36,48 +36,34 @@ class ConfigureSite implements ShouldQueue
             return;
         }
 
-        $site->update(['status' => 'configuring']);
-
-        $siteTask = Task::create([
-            'user_id' => $user->id,
-            'server_id' => $server->id,
-            'ssh_user' => $server->sites_user,
-            'script' => view('scripts.site-caddyfile', [
-                'hostname' => $site->hostname,
-                'phpVersion' => $site->php_version,
-                'sitesUser' => $server->sites_user,
-                'maintenancePage' => view('scripts.maintenance-page', [
-                    'hostname' => $site->hostname,
-                ])->render(),
-            ])->render(),
-            'timeout' => 60,
-        ]);
-
-        $siteTask->run();
-
-        if (! $siteTask->successful()) {
+        if (empty($site->repository_url)) {
             $site->update(['status' => 'failed']);
 
             return;
         }
 
-        $importsTask = Task::create([
+        $site->update(['status' => 'deploying']);
+
+        $task = Task::create([
             'user_id' => $user->id,
             'server_id' => $server->id,
-            'ssh_user' => 'root',
-            'script' => view('scripts.update-caddy-imports', [
+            'ssh_user' => $server->sites_user,
+            'script' => view('scripts.deploy-site', [
                 'hostname' => $site->hostname,
                 'sitesUser' => $server->sites_user,
+                'repositoryUrl' => $site->repository_url,
+                'repositoryBranch' => $site->repository_branch,
+                'phpVersion' => $site->php_version,
             ])->render(),
-            'timeout' => 30,
+            'timeout' => 240,
         ]);
 
-        $importsTask->run();
+        $task->run();
 
-        if ($importsTask->successful()) {
+        if ($task->successful()) {
             $site->update([
-                'status' => 'ready',
-                'configured_at' => now(),
+                'status' => 'active',
+                'deployed_at' => now(),
             ]);
         } else {
             $site->update(['status' => 'failed']);

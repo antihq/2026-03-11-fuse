@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\DeploySite;
 use App\Models\Server;
 use App\Models\Task;
 use Livewire\Attributes\Computed;
@@ -74,6 +75,17 @@ new class extends Component
             $this->connectionStatus = 'Connection failed: '.$task->output;
             $this->connectionSuccess = false;
         }
+    }
+
+    public function deploy(int $siteId): void
+    {
+        $site = $this->server->sites()->findOrFail($siteId);
+
+        if ($site->status !== 'ready') {
+            return;
+        }
+
+        DeploySite::dispatch($site->id);
     }
 
     public function delete(): void
@@ -151,6 +163,7 @@ new class extends Component
                         <flux:table.column>PHP</flux:table.column>
                         <flux:table.column>Branch</flux:table.column>
                         <flux:table.column>Status</flux:table.column>
+                        <flux:table.column></flux:table.column>
                     </flux:table.columns>
                     <flux:table.rows>
                         @foreach($this->server->sites as $site)
@@ -165,12 +178,23 @@ new class extends Component
                                 <flux:table.cell>
                                     @if($site->status === 'active')
                                         <span class="text-green-600">Active</span>
+                                    @elseif($site->status === 'ready')
+                                        <span class="text-blue-600">Ready to Deploy</span>
+                                    @elseif($site->status === 'deploying')
+                                        <span class="text-yellow-600">Deploying...</span>
                                     @elseif($site->status === 'configuring')
                                         <span class="text-yellow-600">Configuring...</span>
                                     @elseif($site->status === 'failed')
                                         <span class="text-red-600">Failed</span>
                                     @else
                                         <span class="text-zinc-500">Pending</span>
+                                    @endif
+                                </flux:table.cell>
+                                <flux:table.cell>
+                                    @if($site->status === 'ready')
+                                        <flux:button size="sm" wire:click="deploy({{ $site->id }})" wire:confirm="Deploy {{ $site->hostname }}?">
+                                            Deploy
+                                        </flux:button>
                                     @endif
                                 </flux:table.cell>
                             </flux:table.row>

@@ -16,6 +16,7 @@ class Site extends Model
         'repository_branch',
         'status',
         'configured_at',
+        'deployed_at',
     ];
 
     protected function casts(): array
@@ -23,6 +24,7 @@ class Site extends Model
         return [
             'server_id' => 'integer',
             'configured_at' => 'datetime',
+            'deployed_at' => 'datetime',
         ];
     }
 

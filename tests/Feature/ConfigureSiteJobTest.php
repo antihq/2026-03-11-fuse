@@ -42,7 +42,7 @@ test('handle creates two tasks and updates site to active on success', function 
     $job->handle();
 
     expect($this->site->fresh())
-        ->status->toBe('active')
+        ->status->toBe('ready')
         ->configured_at->not->toBeNull();
 
     $tasks = Task::where('server_id', $this->server->id)->orderBy('id')->get();
@@ -129,6 +129,7 @@ test('site caddyfile script contains expected content', function () {
         'hostname' => 'example.com',
         'phpVersion' => '8.4',
         'sitesUser' => 'deploy',
+        'maintenancePage' => '<!DOCTYPE html><html><body>Deploying...</body></html>',
     ])->render();
 
     expect($script)
@@ -137,6 +138,8 @@ test('site caddyfile script contains expected content', function () {
         ->toContain('PHP_VERSION="8.4"')
         ->toContain('root * /home/deploy/example.com/public')
         ->toContain('php8.4-fpm.sock')
+        ->toContain('maintenance.html')
+        ->toContain('repository')
         ->not->toContain('service caddy reload')
         ->not->toContain('/etc/caddy/Sites.caddy');
 });
@@ -160,4 +163,41 @@ test('failed method updates site status', function () {
     $job->failed(new Exception('Test failure'));
 
     expect($this->site->fresh()->status)->toBe('failed');
+});
+
+test('site caddyfile script contains maintenance fallback', function () {
+    $script = view('scripts.site-caddyfile', [
+        'hostname' => 'example.com',
+        'phpVersion' => '8.4',
+        'sitesUser' => 'deploy',
+        'maintenancePage' => '<!DOCTYPE html><html><body>Deploying...</body></html>',
+    ])->render();
+
+    expect($script)
+        ->toContain('try_files {path} {path}/index.php /maintenance.html')
+        ->toContain('@maintenance');
+});
+
+test('site caddyfile script creates maintenance page', function () {
+    $script = view('scripts.site-caddyfile', [
+        'hostname' => 'example.com',
+        'phpVersion' => '8.4',
+        'sitesUser' => 'deploy',
+        'maintenancePage' => '<!DOCTYPE html><html><body>Deploying...</body></html>',
+    ])->render();
+
+    expect($script)
+        ->toContain('cat > "$SITE_DIR/public/maintenance.html"')
+        ->toContain('<!DOCTYPE html>');
+});
+
+test('maintenance page view contains expected content', function () {
+    $page = view('scripts.maintenance-page', [
+        'hostname' => 'example.com',
+    ])->render();
+
+    expect($page)
+        ->toContain('<!DOCTYPE html>')
+        ->toContain('example.com')
+        ->toContain('deploy');
 });

@@ -1,10 +1,12 @@
 <?php
 
+use App\Jobs\DeploySite;
 use App\Models\Server;
 use App\Models\Site;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Process;
 use Livewire\Livewire;
 
@@ -318,4 +320,164 @@ test('show page displays site status', function () {
         ->assertSee('Active')
         ->assertSee('Failed')
         ->assertSee('Pending');
+});
+
+test('show page displays ready status', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    Site::create([
+        'server_id' => $server->id,
+        'hostname' => 'ready.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'ready',
+    ]);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->assertSee('Ready to Deploy');
+});
+
+test('show page displays deploying status', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    Site::create([
+        'server_id' => $server->id,
+        'hostname' => 'deploying.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'deploying',
+    ]);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->assertSee('Deploying...');
+});
+
+test('show page shows deploy button for ready sites', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    Site::create([
+        'server_id' => $server->id,
+        'hostname' => 'ready.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'ready',
+    ]);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->assertSee('Deploy');
+});
+
+test('show page does not show deploy button for non ready sites', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    Site::create([
+        'server_id' => $server->id,
+        'hostname' => 'active.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'active',
+    ]);
+
+    $component = Livewire::test('pages::servers.show', ['server' => $server->id]);
+
+    $html = $component->html();
+    expect($html)->not->toContain('wire:click="deploy');
+});
+
+test('deploy method dispatches deploy site job for ready site', function () {
+    Bus::fake();
+
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    $site = Site::create([
+        'server_id' => $server->id,
+        'hostname' => 'ready.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'ready',
+    ]);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->call('deploy', $site->id);
+
+    Bus::assertDispatched(DeploySite::class, fn ($job) => $job->siteId === $site->id);
+});
+
+test('deploy method does nothing for non ready site', function () {
+    Bus::fake();
+
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    $site = Site::create([
+        'server_id' => $server->id,
+        'hostname' => 'active.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'active',
+    ]);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->call('deploy', $site->id);
+
+    Bus::assertNotDispatched(DeploySite::class);
 });
