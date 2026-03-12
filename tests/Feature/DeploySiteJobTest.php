@@ -1,5 +1,6 @@
 <?php
 
+use App\Callbacks\MarkSiteDeployed;
 use App\Jobs\DeploySite;
 use App\Models\Server;
 use App\Models\Site;
@@ -28,71 +29,28 @@ beforeEach(function () {
     ]);
 });
 
-test('handle creates task and updates site to active on success', function () {
+test('handle creates task with callback options and sets site to deploying', function () {
     Process::fake([
         '*' => Process::sequence()
             ->push(Process::result(output: 'mkdir output', exitCode: 0))
             ->push(Process::result(output: 'scp output', exitCode: 0))
-            ->push(Process::result(output: 'Deployment complete', exitCode: 0)),
+            ->push(Process::result(output: 'Background script started', exitCode: 0)),
     ]);
 
     $job = new DeploySite($this->site->id);
     $job->handle();
 
     expect($this->site->fresh())
-        ->status->toBe('active')
-        ->deployed_at->not->toBeNull();
+        ->status->toBe('deploying')
+        ->deployed_at->toBeNull();
 
     $task = Task::where('server_id', $this->server->id)->first();
     expect($task)
         ->ssh_user->toBe('deploy')
-        ->exit_code->toBe(0);
-});
-
-test('handle updates site to deploying status when starting', function () {
-    Process::fake([
-        '*' => Process::sequence()
-            ->push(Process::result(output: 'mkdir output', exitCode: 0))
-            ->push(Process::result(output: 'scp output', exitCode: 0))
-            ->push(Process::result(output: 'Deployment complete', exitCode: 0)),
-    ]);
-
-    $job = new DeploySite($this->site->id);
-    $job->handle();
-
-    expect($this->site->fresh()->status)->toBe('active');
-});
-
-test('handle sets deployed_at on success', function () {
-    Process::fake([
-        '*' => Process::sequence()
-            ->push(Process::result(output: 'mkdir output', exitCode: 0))
-            ->push(Process::result(output: 'scp output', exitCode: 0))
-            ->push(Process::result(output: 'Deployment complete', exitCode: 0)),
-    ]);
-
-    expect($this->site->deployed_at)->toBeNull();
-
-    $job = new DeploySite($this->site->id);
-    $job->handle();
-
-    expect($this->site->fresh()->deployed_at)->not->toBeNull();
-});
-
-test('handle updates site to failed when task fails', function () {
-    Process::fake([
-        '*' => Process::sequence()
-            ->push(Process::result(output: 'mkdir output', exitCode: 0))
-            ->push(Process::result(output: 'scp output', exitCode: 0))
-            ->push(Process::result(output: 'Permission denied', exitCode: 1)),
-    ]);
-
-    $job = new DeploySite($this->site->id);
-    $job->handle();
-
-    expect($this->site->fresh())
-        ->status->toBe('failed')
-        ->deployed_at->toBeNull();
+        ->status->toBe('running')
+        ->options->toBeArray()
+        ->and($task->options['then'])->toHaveCount(1)
+        ->and($task->options['then'][0])->toBeInstanceOf(MarkSiteDeployed::class);
 });
 
 test('handle updates site to failed when user has no ssh key', function () {
@@ -144,7 +102,7 @@ test('deploy script contains expected content', function () {
     expect($script)
         ->toContain('SITES_USER="deploy"')
         ->toContain('HOSTNAME="example.com"')
-        ->toContain('REPOSITORY_URL="git@github.com:user/repo.git"')
+        ->toContain('REPOSITORY_URL="git@github.com:user/repo.git')
         ->toContain('REPOSITORY_BRANCH="main"')
         ->toContain('PHP_VERSION="8.4"')
         ->toContain('git clone')

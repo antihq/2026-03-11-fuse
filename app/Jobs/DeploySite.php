@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Callbacks\MarkSiteDeployed;
 use App\Models\Site;
 use App\Models\Task;
 use Illuminate\Bus\Queueable;
@@ -56,18 +57,12 @@ class DeploySite implements ShouldQueue
                 'phpVersion' => $site->php_version,
             ])->render(),
             'timeout' => 240,
+            'options' => [
+                'then' => [new MarkSiteDeployed($site->id)],
+            ],
         ]);
 
-        $task->run();
-
-        if ($task->successful()) {
-            $site->update([
-                'status' => 'active',
-                'deployed_at' => now(),
-            ]);
-        } else {
-            $site->update(['status' => 'failed']);
-        }
+        $task->runInBackground();
     }
 
     public function failed(?Throwable $e): void
