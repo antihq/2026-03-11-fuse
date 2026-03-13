@@ -4,6 +4,7 @@ use App\Jobs\FinishTask;
 use App\Models\Server;
 use App\Models\Task;
 use App\Models\User;
+use Illuminate\Support\Facades\Process;
 
 beforeEach(function () {
     $this->user = User::factory()->withSshKeys()->create();
@@ -13,6 +14,8 @@ beforeEach(function () {
 });
 
 test('handle calls task finish method with exit code', function () {
+    Process::fake();
+
     $task = Task::create([
         'user_id' => $this->user->id,
         'server_id' => $this->server->id,
@@ -30,6 +33,8 @@ test('handle calls task finish method with exit code', function () {
 });
 
 test('handle with exit code zero marks task successful', function () {
+    Process::fake();
+
     $task = Task::create([
         'user_id' => $this->user->id,
         'server_id' => $this->server->id,
@@ -48,6 +53,8 @@ test('handle with exit code zero marks task successful', function () {
 });
 
 test('handle with non-zero exit code marks task failed', function () {
+    Process::fake();
+
     $task = Task::create([
         'user_id' => $this->user->id,
         'server_id' => $this->server->id,

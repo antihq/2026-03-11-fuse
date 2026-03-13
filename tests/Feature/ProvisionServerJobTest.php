@@ -11,6 +11,8 @@ beforeEach(function () {
 });
 
 test('handle creates task with mark server provisioned callback', function () {
+    Process::fake();
+
     $server = Server::create([
         'user_id' => $this->user->id,
         'name' => 'Test Server',
@@ -41,6 +43,8 @@ test('handle creates task with mark server provisioned callback', function () {
 });
 
 test('handle updates provision status to provisioning', function () {
+    Process::fake();
+
     $server = Server::create([
         'user_id' => $this->user->id,
         'name' => 'Test Server',
@@ -83,6 +87,8 @@ test('handle updates provision status to failed when user has no ssh key', funct
 });
 
 test('handle links task to server via provision task id', function () {
+    Process::fake();
+
     $server = Server::create([
         'user_id' => $this->user->id,
         'name' => 'Test Server',
@@ -105,6 +111,8 @@ test('handle links task to server via provision task id', function () {
 });
 
 test('handle generates script with user public key', function () {
+    Process::fake();
+
     $server = Server::create([
         'user_id' => $this->user->id,
         'name' => 'Test Server',
@@ -126,6 +134,8 @@ test('handle generates script with user public key', function () {
 });
 
 test('handle generates script with correct server details', function () {
+    Process::fake();
+
     $server = Server::create([
         'user_id' => $this->user->id,
         'name' => 'Production Web 1',

@@ -176,6 +176,8 @@ test('callback does not dispatch job when token already used', function () {
 });
 
 test('show does not invalidate token on script request', function () {
+    Process::fake();
+
     $server = Server::create([
         'user_id' => $this->user->id,
         'name' => 'Test Server',
