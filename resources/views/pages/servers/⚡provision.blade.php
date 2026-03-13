@@ -42,11 +42,6 @@ new class extends Component
         $this->poll = false;
     }
 
-    public function getIsPollingProperty(): bool
-    {
-        return $this->poll && $this->server->isProvisioning();
-    }
-
     public function retryProvision(): void
     {
         $server = $this->server;
@@ -65,38 +60,38 @@ new class extends Component
     }
 };
 ?>
-<div>
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-xl font-semibold">Provision Server</h1>
+<div class="max-w-lg">
+    <div class="flex justify-between mb-8">
+        <flux:heading>Provision Server</flux:heading>
     </div>
 
     @if($this->server->isProvisioned())
-        <flux:callout icon="check-circle" color="green">
-            <flux:callout.heading>Server Provisioned</flux:callout.heading>
-            <flux:callout.text>
+        <div>
+            <flux:heading>Server Provisioned</flux:heading>
+            <flux:text class="mt-2">
                 This server was provisioned on {{ $this->server->provisioned_at->format('M j, Y \a\t g:i A') }}.
-            </flux:callout.text>
-        </flux:callout>
+            </flux:text>
+        </div>
 
-        <div class="mt-6">
-            <flux:button variant="primary" href="{{ route('servers.show', $this->server) }}" wire:navigate>
+        <div class="mt-8">
+            <flux:button href="{{ route('servers.show', $this->server) }}" wire:navigate>
                 View Server
             </flux:button>
         </div>
     @elseif($this->server->provision_status === 'failed')
-        <flux:callout icon="exclamation-triangle" color="red">
-            <flux:callout.heading>Provisioning Failed</flux:callout.heading>
-            <flux:callout.text>
+        <div>
+            <flux:heading>Provisioning Failed</flux:heading>
+            <flux:text class="mt-2">
                 @if($this->server->task && $this->server->task->output)
-                    <pre class="mt-2 text-sm bg-zinc-100 dark:bg-zinc-800 p-3 rounded overflow-x-auto max-h-96">{{ $this->server->task->output }}</pre>
+                    <pre class="max-h-96 overflow-auto text-sm">{{ $this->server->task->output }}</pre>
                 @else
                     An error occurred during provisioning. Please try again.
                 @endif
-            </flux:callout.text>
-        </flux:callout>
+            </flux:text>
+        </div>
 
-        <div class="mt-6 flex gap-2">
-            <flux:button wire:click="retryProvision" variant="primary">
+        <div class="mt-8 flex gap-2">
+            <flux:button wire:click="retryProvision">
                 Retry Provisioning
             </flux:button>
             <flux:button href="{{ route('servers.index') }}" wire:navigate>
@@ -105,15 +100,15 @@ new class extends Component
         </div>
     @elseif($this->server->isProvisioning())
         <div wire:poll.2s>
-            <flux:callout icon="arrow-path" color="blue">
-                <flux:callout.heading>
+            <div>
+                <flux:heading>
                     @if($this->server->provision_status === 'ssh_setup')
                         Setting up SSH Access...
                     @else
                         Provisioning in Progress...
                     @endif
-                </flux:callout.heading>
-                <flux:callout.text>
+                </flux:heading>
+                <flux:text class="mt-2">
                     @if($this->server->provision_status === 'ssh_setup')
                         Waiting for SSH key to be added to your server. Run the command below as root.
                     @else
@@ -129,78 +124,58 @@ new class extends Component
                             Starting provisioning...
                         @endif
                     @endif
-                </flux:callout.text>
-            </flux:callout>
+                </flux:text>
+            </div>
 
             @if($this->server->task)
-                <div class="mt-6">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Provisioning Output</span>
+                <div class="mt-8">
+                    <div class="flex justify-between mb-2">
+                        <flux:heading>Provisioning Output</flux:heading>
                         <div class="flex gap-2">
                             <flux:button size="sm" variant="ghost" wire:click="stopPolling" wire:loading.attr="disabled">
                                 Stop Polling
                             </flux:button>
                         </div>
                     </div>
-                    <pre class="text-sm font-mono bg-zinc-100 dark:bg-zinc-800 p-3 rounded overflow-x-auto max-h-96">{{ $this->server->task->output ?: 'Waiting for output...' }}</pre>
+                    <pre class="max-h-96 overflow-auto text-sm">{{ $this->server->task->output ?: 'Waiting for output...' }}</pre>
                 </div>
             @endif
         </div>
     @else
-        <flux:callout icon="light-bulb" color="blue">
-            <flux:callout.heading>Set up SSH Access</flux:callout.heading>
-            <flux:callout.text>
-                Run this command as root on your server. This will add your SSH public key so we can provision the server remotely.
-            </flux:callout.text>
-        </flux:callout>
+        <div>
+            <flux:heading>Set up SSH Access</flux:heading>
+            <flux:text class="mt-2">
+                Run this command as root on your server. This will add your SSH public key so we can provision server remotely.
+            </flux:text>
+        </div>
 
-        <div class="mt-6 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">SSH Setup Command</span>
+        <div class="mt-8">
+            <div class="flex justify-between mb-2">
+                <flux:heading>SSH Setup Command</flux:heading>
                 <div x-data="{ copied: false }">
                     <flux:button
                         size="sm"
                         variant="ghost"
-                        icon="clipboard-document-check"
                         x-on:click="navigator.clipboard.writeText('curl -sSL {{ $sshSetupUrl }} | sudo bash'); copied = true; setTimeout(() => copied = false, 2000)"
                     >
                         <span x-text="copied ? 'Copied!' : 'Copy'"></span>
                     </flux:button>
                 </div>
             </div>
-            <code class="block text-sm font-mono bg-zinc-900 text-zinc-100 p-3 rounded overflow-x-auto">
+            <code class="block overflow-auto break-all text-sm">
                 curl -sSL {{ $sshSetupUrl }} | sudo bash
             </code>
         </div>
 
-        <div class="mt-6 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">SSH Setup URL (one-time use)</span>
-                <div x-data="{ copied: false }">
-                    <flux:button
-                        size="sm"
-                        variant="ghost"
-                        icon="clipboard-document-check"
-                        x-on:click="navigator.clipboard.writeText('{{ $sshSetupUrl }}'); copied = true; setTimeout(() => copied = false, 2000)"
-                    >
-                        <span x-text="copied ? 'Copied!' : 'Copy'"></span>
-                    </flux:button>
-                </div>
-            </div>
-            <code class="block text-sm font-mono bg-zinc-900 text-zinc-100 p-3 rounded overflow-x-auto break-all">
-                {{ $sshSetupUrl }}
-            </code>
+        <div class="mt-8">
+            <flux:heading>Ubuntu LTS Required</flux:heading>
+            <flux:text class="mt-2">
+                This script must be run on the latest Ubuntu LTS version (24.04) on a fresh server.
+            </flux:text>
         </div>
 
-        <flux:callout icon="exclamation-triangle" color="amber" class="mt-6">
-            <flux:callout.heading>Ubuntu LTS Required</flux:callout.heading>
-            <flux:callout.text>
-                This script must be run on the latest Ubuntu LTS version (24.04) on a fresh server.
-            </flux:callout.text>
-        </flux:callout>
-
-        <div class="mt-6 flex gap-2">
-            <flux:button wire:click="startPolling" variant="primary">
+        <div class="mt-8 flex gap-2">
+            <flux:button wire:click="startPolling">
                 Run Command & Monitor Progress
             </flux:button>
             <flux:button href="{{ route('servers.index') }}" wire:navigate>
