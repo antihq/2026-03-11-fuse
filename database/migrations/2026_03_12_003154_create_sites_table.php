@@ -16,6 +16,11 @@ return new class extends Migration
             $table->string('size')->default('large');
             $table->string('repository_url');
             $table->string('repository_branch')->default('main');
+            $table->text('hook_before_updating_repository')->nullable();
+            $table->text('hook_after_updating_repository')->nullable();
+            $table->string('status')->default('pending');
+            $table->timestamp('configured_at')->nullable();
+            $table->timestamp('deployed_at')->nullable();
             $table->timestamps();
 
             $table->unique(['server_id', 'hostname']);

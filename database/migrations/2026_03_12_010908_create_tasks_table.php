@@ -18,6 +18,7 @@ return new class extends Migration
             $table->integer('exit_code')->nullable();
             $table->text('output')->nullable();
             $table->integer('timeout')->default(60);
+            $table->longText('options')->nullable();
             $table->timestamp('started_at')->nullable();
             $table->timestamp('finished_at')->nullable();
             $table->timestamps();
