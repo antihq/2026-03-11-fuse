@@ -47,3 +47,33 @@ test('ssh public key is visible in json serialization', function () {
     expect($decoded)->toHaveKey('ssh_public_key')
         ->and($decoded['ssh_public_key'])->toBe($user->ssh_public_key);
 });
+
+test('initials are derived from email with dots', function () {
+    $user = User::factory()->create(['email' => 'john.doe@example.com']);
+
+    expect($user->initials())->toBe('JD');
+});
+
+test('initials are derived from email with underscores', function () {
+    $user = User::factory()->create(['email' => 'john_doe@example.com']);
+
+    expect($user->initials())->toBe('JD');
+});
+
+test('initials are derived from email with hyphens', function () {
+    $user = User::factory()->create(['email' => 'john-doe@example.com']);
+
+    expect($user->initials())->toBe('JD');
+});
+
+test('initials are derived from single word email', function () {
+    $user = User::factory()->create(['email' => 'john@example.com']);
+
+    expect($user->initials())->toBe('J');
+});
+
+test('initials take first two parts from multi-part email', function () {
+    $user = User::factory()->create(['email' => 'john.doe.smith@example.com']);
+
+    expect($user->initials())->toBe('JD');
+});

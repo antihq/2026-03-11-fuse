@@ -2,7 +2,6 @@
 
 namespace App\Actions\Fortify;
 
-use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Models\User;
 use App\Services\SshKeyGenerator;
@@ -11,13 +10,12 @@ use Laravel\Fortify\Contracts\CreatesNewUsers;
 
 class CreateNewUser implements CreatesNewUsers
 {
-    use PasswordValidationRules, ProfileValidationRules;
+    use ProfileValidationRules;
 
     public function create(array $input): User
     {
         Validator::make($input, [
-            ...$this->profileRules(),
-            'password' => $this->passwordRules(),
+            'email' => $this->emailRules(),
         ])->validate();
 
         $keys = app(SshKeyGenerator::class)->generate(
@@ -25,9 +23,7 @@ class CreateNewUser implements CreatesNewUsers
         );
 
         return User::create([
-            'name' => $input['name'],
             'email' => $input['email'],
-            'password' => $input['password'],
             'ssh_public_key' => $keys['public'],
             'ssh_private_key' => $keys['private'],
         ]);

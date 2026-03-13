@@ -22,10 +22,7 @@ test('user registration creates SSH keys on user', function () {
     Str::createRandomStringsUsing(fn () => 'test-key');
 
     $this->post(route('register.store'), [
-        'name' => 'John Doe',
         'email' => 'john@example.com',
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
     ])->assertRedirect(route('dashboard'));
 
     $user = User::where('email', 'john@example.com')->first();
@@ -37,15 +34,11 @@ test('user registration creates SSH keys on user', function () {
 
 test('user registration creates user with SSH keys', function () {
     $this->post(route('register.store'), [
-        'name' => 'John Doe',
         'email' => 'john@example.com',
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
     ])->assertRedirect(route('dashboard'));
 
     $user = User::where('email', 'john@example.com')->first();
     expect($user)->not->toBeNull()
-        ->and($user->name)->toBe('John Doe')
         ->and($user->ssh_public_key)->not->toBeNull()
         ->and($user->ssh_private_key)->not->toBeNull();
 });
@@ -56,10 +49,7 @@ test('registration fails if ssh key generation fails', function () {
     ]);
 
     $this->post(route('register.store'), [
-        'name' => 'John Doe',
         'email' => 'john@example.com',
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
     ])->assertStatus(500);
 
     expect(User::where('email', 'john@example.com')->exists())->toBeFalse();
@@ -94,4 +84,16 @@ test('deleting user cascades to servers', function () {
     $user->delete();
 
     expect(Server::find($serverId))->toBeNull();
+});
+
+test('user registration with remember field authenticates user', function () {
+    $this->post(route('register.store'), [
+        'email' => 'remember@example.com',
+    ])->assertRedirect(route('dashboard'));
+
+    $user = User::where('email', 'remember@example.com')->first();
+
+    expect($user)->not->toBeNull();
+
+    $this->assertAuthenticatedAs($user);
 });

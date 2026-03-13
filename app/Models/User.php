@@ -14,7 +14,6 @@ class User extends Authenticatable
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     protected $fillable = [
-        'name',
         'email',
         'password',
         'ssh_public_key',
@@ -40,10 +39,12 @@ class User extends Authenticatable
 
     public function initials(): string
     {
-        return Str::of($this->name)
+        return Str::of($this->email)
+            ->before('@')
+            ->replaceMatches('/[._-]/', ' ')
             ->explode(' ')
             ->take(2)
-            ->map(fn ($word) => Str::substr($word, 0, 1))
+            ->map(fn ($word) => Str::upper(Str::substr($word, 0, 1)))
             ->implode('');
     }
 

@@ -3,26 +3,41 @@
 use App\Concerns\PasswordValidationRules;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new #[Title('Password settings')] class extends Component {
+new #[Title('Password settings')] class extends Component
+{
     use PasswordValidationRules;
 
     public string $current_password = '';
+
     public string $password = '';
+
     public string $password_confirmation = '';
+
+    #[Computed]
+    public function hasPassword(): bool
+    {
+        return ! empty(Auth::user()->password);
+    }
 
     /**
      * Update the password for the currently authenticated user.
      */
     public function updatePassword(): void
     {
+        $rules = [
+            'password' => $this->passwordRules(),
+        ];
+
+        if ($this->hasPassword) {
+            $rules['current_password'] = $this->currentPasswordRules();
+        }
+
         try {
-            $validated = $this->validate([
-                'current_password' => $this->currentPasswordRules(),
-                'password' => $this->passwordRules(),
-            ]);
+            $validated = $this->validate($rules);
         } catch (ValidationException $e) {
             $this->reset('current_password', 'password', 'password_confirmation');
 
@@ -44,16 +59,18 @@ new #[Title('Password settings')] class extends Component {
 
     <flux:heading class="sr-only">{{ __('Password settings') }}</flux:heading>
 
-    <x-pages::settings.layout :heading="__('Update password')" :subheading="__('Ensure your account is using a long, random password to stay secure')">
+    <x-pages::settings.layout :heading="$this->hasPassword ? __('Update password') : __('Set password')" :subheading="$this->hasPassword ? __('Ensure your account is using a long, random password to stay secure') : __('Set a password to secure your account')">
         <form method="POST" wire:submit="updatePassword" class="mt-6 space-y-6">
-            <flux:input
-                wire:model="current_password"
-                :label="__('Current password')"
-                type="password"
-                required
-                autocomplete="current-password"
-                viewable
-            />
+            @if ($this->hasPassword)
+                <flux:input
+                    wire:model="current_password"
+                    :label="__('Current password')"
+                    type="password"
+                    required
+                    autocomplete="current-password"
+                    viewable
+                />
+            @endif
             <flux:input
                 wire:model="password"
                 :label="__('New password')"
