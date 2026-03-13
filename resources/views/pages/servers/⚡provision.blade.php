@@ -3,7 +3,6 @@
 use App\Models\Server;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
-use Livewire\Attributes\Url;
 use Livewire\Component;
 
 new class extends Component
@@ -13,33 +12,16 @@ new class extends Component
 
     public string $sshSetupUrl = '';
 
-    #[Url(as: 'poll', history: false)]
-    public bool $poll = false;
-
     public function mount(Server $server): void
     {
         $this->serverId = $server->id;
         $this->sshSetupUrl = $server->ssh_setup_token ? url('/ssh-setup/'.$server->ssh_setup_token) : '';
-
-        if ($server->isProvisioning()) {
-            $this->poll = true;
-        }
     }
 
     #[Computed]
     public function server(): Server
     {
         return Server::with('task')->findOrFail($this->serverId);
-    }
-
-    public function startPolling(): void
-    {
-        $this->poll = true;
-    }
-
-    public function stopPolling(): void
-    {
-        $this->poll = false;
     }
 
     public function retryProvision(): void
@@ -55,7 +37,6 @@ new class extends Component
             ]);
 
             $this->sshSetupUrl = url('/ssh-setup/'.$server->fresh()->ssh_setup_token);
-            $this->poll = false;
         }
     }
 };
@@ -99,7 +80,7 @@ new class extends Component
             </flux:button>
         </div>
     @elseif($this->server->isProvisioning())
-        <div wire:poll.2s>
+        <div>
             <div>
                 <flux:heading>
                     @if($this->server->provision_status === 'ssh_setup')
@@ -132,8 +113,8 @@ new class extends Component
                     <div class="flex justify-between mb-2">
                         <flux:heading>Provisioning Output</flux:heading>
                         <div class="flex gap-2">
-                            <flux:button size="sm" variant="ghost" wire:click="stopPolling" wire:loading.attr="disabled">
-                                Stop Polling
+                            <flux:button size="sm" variant="ghost" wire:click="$refresh" wire:loading.attr="disabled">
+                                Check Status
                             </flux:button>
                         </div>
                     </div>
@@ -175,8 +156,8 @@ new class extends Component
         </div>
 
         <div class="mt-8 flex gap-2">
-            <flux:button wire:click="startPolling">
-                Run Command & Monitor Progress
+            <flux:button wire:click="$refresh">
+                Check Status
             </flux:button>
             <flux:button href="{{ route('servers.index') }}" wire:navigate>
                 Back to Servers
