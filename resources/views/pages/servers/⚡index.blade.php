@@ -36,9 +36,8 @@ new class extends Component
             <flux:table.columns>
                 <flux:table.column>Name</flux:table.column>
                 <flux:table.column>IP Address</flux:table.column>
-                <flux:table.column>RAM</flux:table.column>
-                <flux:table.column>Keys</flux:table.column>
-                <flux:table.column></flux:table.column>
+
+                <flux:table.column align="end"></flux:table.column>
             </flux:table.columns>
             <flux:table.rows>
                 @foreach($this->servers as $server)
@@ -51,14 +50,18 @@ new class extends Component
                             @endif
                         </flux:table.cell>
                         <flux:table.cell>{{ $server->ip_address }}</flux:table.cell>
-                        <flux:table.cell>{{ number_format($server->ram_mb) }} MB</flux:table.cell>
-                        <flux:table.cell>{{ $server->authorizedKeysCount() }}</flux:table.cell>
-                        <flux:table.cell>
-                            @if($server->provisioned_at)
-                                <flux:button size="sm" variant="ghost" href="{{ route('servers.show', $server) }}" wire:navigate>View</flux:button>
-                            @endif
-                            <flux:button size="sm" variant="ghost" href="{{ route('servers.edit', $server) }}" wire:navigate>Edit</flux:button>
-                            <flux:button size="sm" variant="ghost" wire:click="deleteServer({{ $server->id }})" wire:confirm="Are you sure you want to delete this server?">Delete</flux:button>
+                        <flux:table.cell align="end">
+                            <flux:dropdown>
+                                <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" />
+                                <flux:menu>
+                                    @if($server->provisioned_at)
+                                        <flux:menu.item icon="eye" href="{{ route('servers.show', $server) }}" wire:navigate>View</flux:menu.item>
+                                    @endif
+                                    <flux:menu.item icon="pencil-square" href="{{ route('servers.edit', $server) }}" wire:navigate>Edit</flux:menu.item>
+                                    <flux:menu.separator />
+                                    <flux:menu.item icon="trash" variant="danger" wire:click="deleteServer({{ $server->id }})" wire:confirm="Are you sure you want to delete this server?">Delete</flux:menu.item>
+                                </flux:menu>
+                            </flux:dropdown>
                         </flux:table.cell>
                     </flux:table.row>
                 @endforeach
