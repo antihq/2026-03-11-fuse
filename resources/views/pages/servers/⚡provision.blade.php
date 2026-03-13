@@ -12,6 +12,8 @@ new class extends Component
 
     public string $sshSetupUrl = '';
 
+    public ?string $liveOutput = null;
+
     public function mount(Server $server): void
     {
         $this->serverId = $server->id;
@@ -37,6 +39,14 @@ new class extends Component
             ]);
 
             $this->sshSetupUrl = url('/ssh-setup/'.$server->fresh()->ssh_setup_token);
+        }
+    }
+
+    public function fetchOutput(): void
+    {
+        if ($this->server->task?->isRunning()) {
+            $this->liveOutput = $this->server->task->retrieveOutput();
+            $this->dispatch('output-fetched');
         }
     }
 };
@@ -113,12 +123,17 @@ new class extends Component
                     <div class="flex justify-between mb-2">
                         <flux:heading>Provisioning Output</flux:heading>
                         <div class="flex gap-2">
-                            <flux:button size="sm" variant="ghost" wire:click="$refresh" wire:loading.attr="disabled">
-                                Check Status
+                            <flux:button size="sm" variant="ghost" wire:click="$refresh">
+                                Refresh
+                            </flux:button>
+                            <flux:button size="sm" variant="ghost" wire:click="fetchOutput">
+                                View Live Output
                             </flux:button>
                         </div>
                     </div>
-                    <pre class="max-h-96 overflow-auto text-sm">{{ $this->server->task->output ?: 'Waiting for output...' }}</pre>
+                    <div x-data x-on:output-fetched.window="$nextTick(() => $refs.output.scrollTop = $refs.output.scrollHeight)">
+                        <pre x-ref="output" class="max-h-96 overflow-auto text-sm">{{ $liveOutput ?? $this->server->task->output ?: 'Click "View Live Output" to see progress' }}</pre>
+                    </div>
                 </div>
             @endif
         </div>
@@ -157,7 +172,7 @@ new class extends Component
 
         <div class="mt-8 flex gap-2">
             <flux:button wire:click="$refresh">
-                Check Status
+                Refresh
             </flux:button>
             <flux:button href="{{ route('servers.index') }}" wire:navigate>
                 Back to Servers
