@@ -5,6 +5,13 @@ use Livewire\Component;
 
 new class extends Component
 {
+    public function mount(): void
+    {
+        if (auth()->user()->servers()->doesntExist()) {
+            $this->redirect(route('servers.create'), navigate: true);
+        }
+    }
+
     #[Computed]
     public function servers()
     {

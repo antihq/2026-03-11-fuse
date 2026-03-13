@@ -28,10 +28,25 @@ test('guests cannot access servers edit page', function () {
     $this->get(route('servers.edit', $server))->assertRedirect(route('login'));
 });
 
-test('authenticated users can access servers index page', function () {
-    $this->actingAs($this->user)
-        ->get(route('servers.index'))
-        ->assertStatus(200);
+test('users with servers can access the index page', function () {
+    $this->actingAs($this->user);
+
+    Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+    ]);
+
+    Livewire::test('pages::servers.index')
+        ->assertOk();
+});
+
+test('users with no servers are redirected to create page', function () {
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::servers.index')
+        ->assertRedirect(route('servers.create'));
 });
 
 test('authenticated users can access servers create page', function () {
@@ -284,6 +299,13 @@ test('user cannot delete servers from other users', function () {
     ]);
 
     $this->actingAs($this->user);
+
+    Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'My Server',
+        'ip_address' => '192.168.1.2',
+        'ram_mb' => 1024,
+    ]);
 
     Livewire::test('pages::servers.index')
         ->call('deleteServer', $otherServer->id);
