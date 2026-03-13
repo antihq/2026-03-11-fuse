@@ -16,7 +16,7 @@ new class extends Component
     public string $ram_mb = '';
 
     #[Validate('required|string|min:1|max:32|regex:/^[a-z][a-z0-9_-]*$/')]
-    public string $sites_user = 'deploy';
+    public string $sites_user = 'fuse';
 
     #[Validate('nullable|string')]
     public string $authorized_keys = '';
@@ -44,9 +44,9 @@ new class extends Component
 };
 ?>
 <div>
-    <h1 class="text-xl font-semibold mb-4">Add Server</h1>
+    <h1 class="text-xl font-semibold">Add Server</h1>
 
-    <form wire:submit="save" class="space-y-2">
+    <form wire:submit="save" class="space-y-8 max-w-lg mt-8">
         <flux:input wire:model="name" label="Name" />
         <flux:input wire:model="ip_address" label="IP Address" />
         <flux:input wire:model="ram_mb" label="RAM (MB)" type="number" />

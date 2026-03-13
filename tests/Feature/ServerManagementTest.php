@@ -346,11 +346,11 @@ test('index hides view button for non-provisioned servers', function () {
     expect($html)->not->toContain('servers.show');
 });
 
-test('sites user defaults to deploy', function () {
+test('sites user defaults to fuse', function () {
     $this->actingAs($this->user);
 
     Livewire::test('pages::servers.create')
-        ->assertSet('sites_user', 'deploy');
+        ->assertSet('sites_user', 'fuse');
 });
 
 test('sites user must start with lowercase letter', function () {
