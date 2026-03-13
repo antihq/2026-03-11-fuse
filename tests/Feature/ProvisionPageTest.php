@@ -15,7 +15,8 @@ test('guests cannot access provision page', function () {
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
-        'provision_token' => 'test-token',
+        'ssh_setup_token' => 'test-token',
+        'provision_status' => 'pending',
         'mysql_root_password' => 'test-mysql-password-123',
         'deploy_user_password' => 'test-deploy-password-123',
     ]);
@@ -30,7 +31,8 @@ test('authenticated users can access provision page', function () {
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
-        'provision_token' => 'test-token',
+        'ssh_setup_token' => 'test-token',
+        'provision_status' => 'pending',
         'mysql_root_password' => 'test-mysql-password-123',
         'deploy_user_password' => 'test-deploy-password-123',
     ]);
@@ -39,98 +41,59 @@ test('authenticated users can access provision page', function () {
         ->get(route('servers.provision', $server))
         ->assertStatus(200)
         ->assertSee('Provision Server')
-        ->assertSee('test-token');
+        ->assertSee('Set up SSH Access');
 });
 
-test('provision page displays provision url', function () {
+test('provision page displays ssh setup url', function () {
     $server = Server::create([
         'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
-        'provision_token' => 'my-provision-token',
+        'ssh_setup_token' => 'my-ssh-token',
+        'provision_status' => 'pending',
         'mysql_root_password' => 'test-mysql-password-123',
         'deploy_user_password' => 'test-deploy-password-123',
     ]);
 
     Livewire::actingAs($this->user)
         ->test('pages::servers.provision', ['server' => $server])
-        ->assertSet('provisionUrl', url('/provision/my-provision-token'));
+        ->assertSet('sshSetupUrl', url('/ssh-setup/my-ssh-token'));
 });
 
-test('regenerate token creates new token and updates url', function () {
+test('retry provision regenerates ssh setup token for failed server', function () {
     $server = Server::create([
         'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
-        'provision_token' => 'original-token',
+        'ssh_setup_token' => null,
+        'provision_status' => 'failed',
         'mysql_root_password' => 'test-mysql-password-123',
         'deploy_user_password' => 'test-deploy-password-123',
     ]);
 
     Livewire::actingAs($this->user)
         ->test('pages::servers.provision', ['server' => $server])
-        ->call('regenerateToken')
-        ->assertSet('provisionUrl', fn ($url) => str_contains($url, '/provision/') && ! str_contains($url, 'original-token'));
+        ->call('retryProvision')
+        ->assertSet('sshSetupUrl', fn ($url) => str_contains($url, '/ssh-setup/'))
+        ->assertSet('poll', false);
 
-    expect($server->fresh()->provision_token)->not->toBe('original-token');
+    expect($server->fresh()->ssh_setup_token)->not->toBeNull()
+        ->and($server->fresh()->provision_status)->toBe('pending');
 });
 
-test('mark as provisioned sets provisioned_at and clears token', function () {
+test('provisioned server shows success message', function () {
     $server = Server::create([
         'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
-        'provision_token' => 'test-token',
-        'mysql_root_password' => 'test-mysql-password-123',
-        'deploy_user_password' => 'test-deploy-password-123',
-    ]);
-
-    Livewire::actingAs($this->user)
-        ->test('pages::servers.provision', ['server' => $server])
-        ->call('markAsProvisioned')
-        ->assertSet('provisionUrl', '');
-
-    $server->refresh();
-
-    expect($server->provisioned_at)->not->toBeNull()
-        ->and($server->provision_token)->toBeNull();
-});
-
-test('regenerate token does nothing when server is already provisioned', function () {
-    $server = Server::create([
-        'user_id' => $this->user->id,
-        'name' => 'Test Server',
-        'ip_address' => '192.168.1.1',
-        'ram_mb' => 2048,
-        'sites_user' => 'deploy',
-        'provision_token' => null,
-        'provisioned_at' => now(),
-        'mysql_root_password' => 'test-mysql-password-123',
-        'deploy_user_password' => 'test-deploy-password-123',
-    ]);
-
-    Livewire::actingAs($this->user)
-        ->test('pages::servers.provision', ['server' => $server])
-        ->call('regenerateToken')
-        ->assertSet('provisionUrl', '');
-
-    expect($server->fresh()->provision_token)->toBeNull();
-});
-
-test('provisioned server shows success message instead of command', function () {
-    $server = Server::create([
-        'user_id' => $this->user->id,
-        'name' => 'Test Server',
-        'ip_address' => '192.168.1.1',
-        'ram_mb' => 2048,
-        'sites_user' => 'deploy',
-        'provision_token' => null,
+        'ssh_setup_token' => null,
+        'provision_status' => 'provisioned',
         'provisioned_at' => now(),
         'mysql_root_password' => 'test-mysql-password-123',
         'deploy_user_password' => 'test-deploy-password-123',
@@ -139,42 +102,102 @@ test('provisioned server shows success message instead of command', function () 
     Livewire::actingAs($this->user)
         ->test('pages::servers.provision', ['server' => $server])
         ->assertSee('Server Provisioned')
-        ->assertDontSee('Provisioning Command')
-        ->assertDontSee('Mark as Provisioned');
+        ->assertDontSee('SSH Setup Command')
+        ->assertDontSee('Set up SSH Access');
 });
 
-test('unprovisioned server shows provisioning command and mark button', function () {
+test('pending server shows ssh setup command', function () {
     $server = Server::create([
         'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
-        'provision_token' => 'test-token',
+        'ssh_setup_token' => 'test-token',
+        'provision_status' => 'pending',
         'mysql_root_password' => 'test-mysql-password-123',
         'deploy_user_password' => 'test-deploy-password-123',
     ]);
 
     Livewire::actingAs($this->user)
         ->test('pages::servers.provision', ['server' => $server])
-        ->assertSee('Provisioning Command')
-        ->assertSee('Mark as Provisioned')
+        ->assertSee('SSH Setup Command')
+        ->assertSee('Run Command & Monitor Progress', escape: false)
         ->assertDontSee('Server Provisioned');
 });
 
-test('provision page handles server without provision token', function () {
+test('provisioning server shows progress indicator', function () {
     $server = Server::create([
         'user_id' => $this->user->id,
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
         'sites_user' => 'deploy',
-        'provision_token' => null,
+        'ssh_setup_token' => null,
+        'ssh_ready_at' => now(),
+        'provision_status' => 'ssh_setup',
         'mysql_root_password' => 'test-mysql-password-123',
         'deploy_user_password' => 'test-deploy-password-123',
     ]);
 
     Livewire::actingAs($this->user)
         ->test('pages::servers.provision', ['server' => $server])
-        ->assertSet('provisionUrl', '');
+        ->assertSee('Setting up SSH Access')
+        ->assertSee('Waiting for SSH key to be added');
+});
+
+test('provision page handles server without ssh setup token', function () {
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 2048,
+        'sites_user' => 'deploy',
+        'ssh_setup_token' => null,
+        'provision_status' => 'failed',
+        'mysql_root_password' => 'test-mysql-password-123',
+        'deploy_user_password' => 'test-deploy-password-123',
+    ]);
+
+    Livewire::actingAs($this->user)
+        ->test('pages::servers.provision', ['server' => $server])
+        ->assertSet('sshSetupUrl', '');
+});
+
+test('start polling enables polling for provisioning servers', function () {
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 2048,
+        'sites_user' => 'deploy',
+        'ssh_setup_token' => 'test-token',
+        'provision_status' => 'pending',
+        'mysql_root_password' => 'test-mysql-password-123',
+        'deploy_user_password' => 'test-deploy-password-123',
+    ]);
+
+    Livewire::actingAs($this->user)
+        ->test('pages::servers.provision', ['server' => $server])
+        ->call('startPolling')
+        ->assertSet('poll', true);
+});
+
+test('stop polling disables polling', function () {
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 2048,
+        'sites_user' => 'deploy',
+        'ssh_setup_token' => null,
+        'provision_status' => 'provisioning',
+        'mysql_root_password' => 'test-mysql-password-123',
+        'deploy_user_password' => 'test-deploy-password-123',
+    ]);
+
+    Livewire::actingAs($this->user)
+        ->test('pages::servers.provision', ['server' => $server])
+        ->call('stopPolling')
+        ->assertSet('poll', false);
 });

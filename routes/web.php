@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\ProvisionController;
+use App\Http\Controllers\SshSetupController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -16,6 +16,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('servers/{server}/sites/{site}/settings', 'pages::sites.settings')->name('servers.sites.settings');
 });
 
-Route::get('/provision/{token}', [ProvisionController::class, 'show'])->name('provision.show');
+Route::get('/ssh-setup/{token}', [SshSetupController::class, 'show'])->name('ssh-setup.show');
+Route::get('/ssh-setup/{token}/callback', [SshSetupController::class, 'callback'])->name('ssh-setup.callback');
 
 require __DIR__.'/settings.php';

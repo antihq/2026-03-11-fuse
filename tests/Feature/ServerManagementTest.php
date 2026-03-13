@@ -58,7 +58,8 @@ test('user can create a server', function () {
         ->ip_address->toBe('192.168.1.100')
         ->ram_mb->toBe(2048)
         ->authorized_keys->toBe('ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI test@example.com')
-        ->provision_token->not->toBeNull()
+        ->ssh_setup_token->not->toBeNull()
+        ->provision_status->toBe('pending')
         ->mysql_root_password->not->toBeNull()
         ->deploy_user_password->not->toBeNull();
 });

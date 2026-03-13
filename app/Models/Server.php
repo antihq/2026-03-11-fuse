@@ -11,7 +11,7 @@ class Server extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'name', 'ip_address', 'ram_mb', 'authorized_keys', 'provision_token', 'sites_user', 'provisioned_at', 'mysql_root_password', 'deploy_user_password'];
+    protected $fillable = ['user_id', 'name', 'ip_address', 'ram_mb', 'authorized_keys', 'ssh_setup_token', 'ssh_ready_at', 'provision_status', 'provision_task_id', 'sites_user', 'provisioned_at', 'mysql_root_password', 'deploy_user_password'];
 
     protected $hidden = ['mysql_root_password', 'deploy_user_password'];
 
@@ -19,6 +19,7 @@ class Server extends Model
     {
         return [
             'ram_mb' => 'integer',
+            'ssh_ready_at' => 'datetime',
             'provisioned_at' => 'datetime',
             'mysql_root_password' => 'encrypted',
             'deploy_user_password' => 'encrypted',
@@ -35,6 +36,11 @@ class Server extends Model
         return $this->hasMany(Site::class);
     }
 
+    public function task(): BelongsTo
+    {
+        return $this->belongsTo(Task::class, 'provision_task_id');
+    }
+
     public function authorizedKeysCount(): int
     {
         if (empty($this->authorized_keys)) {
@@ -44,5 +50,20 @@ class Server extends Model
         return collect(explode("\n", $this->authorized_keys))
             ->filter(fn ($line) => ! empty(trim($line)))
             ->count();
+    }
+
+    public function isProvisioning(): bool
+    {
+        return in_array($this->provision_status, ['ssh_setup', 'provisioning']);
+    }
+
+    public function isProvisioned(): bool
+    {
+        return $this->provision_status === 'provisioned';
+    }
+
+    public function isPending(): bool
+    {
+        return $this->provision_status === 'pending';
     }
 }
