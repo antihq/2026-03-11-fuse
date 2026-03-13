@@ -82,7 +82,7 @@ new class extends Component
     {
         $site = $this->server->sites()->findOrFail($siteId);
 
-        if ($site->status !== 'ready') {
+        if (! in_array($site->status, ['ready', 'active'])) {
             return;
         }
 
@@ -211,9 +211,9 @@ new class extends Component
                                         <flux:button size="sm" variant="ghost" href="{{ route('servers.sites.settings', [$this->server, $site]) }}" wire:navigate>
                                             Settings
                                         </flux:button>
-                                        @if($site->status === 'ready')
+                                        @if(in_array($site->status, ['ready', 'active']))
                                             <flux:button size="sm" wire:click="deploy({{ $site->id }})" wire:confirm="Deploy {{ $site->hostname }}?">
-                                                Deploy
+                                                {{ $site->status === 'ready' ? 'Deploy' : 'Deploy Again' }}
                                             </flux:button>
                                         @endif
                                         <flux:button size="sm" variant="danger" wire:click="deleteSite({{ $site->id }})" wire:confirm="Delete {{ $site->hostname }}? This cannot be undone.">
