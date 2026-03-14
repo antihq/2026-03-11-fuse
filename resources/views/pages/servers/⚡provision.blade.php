@@ -121,7 +121,7 @@ new class extends Component
                         <flux:heading>Provisioning Output</flux:heading>
                         <div class="flex gap-2">
                             <flux:button size="sm" wire:click="$refresh">
-                                Refresh
+                                Check Status
                             </flux:button>
                             <flux:button size="sm" wire:click="fetchOutput">
                                 View Live Output

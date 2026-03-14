@@ -382,7 +382,7 @@ test('provisioning with task shows View Live Output button', function () {
 
     Livewire::actingAs($this->user)
         ->test('pages::servers.provision', ['server' => $server])
-        ->assertSee('Refresh')
+        ->assertSee('Check Status')
         ->assertSee('View Live Output')
         ->assertDontSee('Run the Command');
 });
