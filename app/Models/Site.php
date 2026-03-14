@@ -22,6 +22,14 @@ class Site extends Model
         'status',
         'configured_at',
         'deployed_at',
+        'database_name',
+        'database_user',
+        'database_password',
+        'database_created_at',
+    ];
+
+    protected $hidden = [
+        'database_password',
     ];
 
     protected function casts(): array
@@ -30,6 +38,8 @@ class Site extends Model
             'server_id' => 'integer',
             'configured_at' => 'datetime',
             'deployed_at' => 'datetime',
+            'database_password' => 'encrypted',
+            'database_created_at' => 'datetime',
         ];
     }
 
@@ -71,6 +81,13 @@ if [ -f "artisan" ]; then
         if [ -n "\$HOSTNAME" ]; then
             sed -i "s|^APP_URL=.*|APP_URL=https://\$HOSTNAME|g" .env
         fi
+    fi
+
+    if [ -n "\$DB_DATABASE" ]; then
+        echo "Updating database credentials..."
+        sed -i "s|^DB_DATABASE=.*|DB_DATABASE=\$DB_DATABASE|g" .env
+        sed -i "s|^DB_USERNAME=.*|DB_USERNAME=\$DB_USERNAME|g" .env
+        sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=\$DB_PASSWORD|g" .env
     fi
 
     php{$phpVersion} artisan config:cache

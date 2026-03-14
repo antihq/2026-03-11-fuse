@@ -1,10 +1,12 @@
 <?php
 
 use App\Jobs\ConfigureSite;
+use App\Jobs\CreateSiteDatabase;
 use App\Models\Server;
 use App\Models\Site;
 use App\Models\Task;
 use App\Models\User;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Process;
 
 beforeEach(function () {
@@ -27,7 +29,9 @@ beforeEach(function () {
     ]);
 });
 
-test('handle creates two tasks and updates site to active on success', function () {
+test('handle creates two tasks and dispatches database job on success', function () {
+    Bus::fake();
+
     Process::fake([
         '*' => Process::sequence()
             ->push(Process::result(output: 'mkdir output', exitCode: 0))
@@ -42,7 +46,7 @@ test('handle creates two tasks and updates site to active on success', function 
     $job->handle();
 
     expect($this->site->fresh())
-        ->status->toBe('ready')
+        ->status->toBe('configuring')
         ->configured_at->not->toBeNull();
 
     $tasks = Task::where('server_id', $this->server->id)->orderBy('id')->get();
@@ -51,6 +55,8 @@ test('handle creates two tasks and updates site to active on success', function 
         ->and($tasks[0])->exit_code->toBe(0)
         ->and($tasks[1])->ssh_user->toBe('root')
         ->and($tasks[1])->exit_code->toBe(0);
+
+    Bus::assertDispatched(CreateSiteDatabase::class, fn ($job) => $job->siteId === $this->site->id);
 });
 
 test('task 1 failure prevents task 2 from running', function () {

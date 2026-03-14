@@ -213,3 +213,49 @@ test('handle passes site hooks to deploy script', function () {
         ->toContain('Running hook before updating repository')
         ->toContain('Running hook after updating repository');
 });
+
+test('deploy script includes database credentials when site has them', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'withdb.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'ready',
+        'database_name' => 'withdb_com',
+        'database_user' => 'withdb_com',
+        'database_password' => 'db_password',
+    ]);
+
+    $script = view('scripts.deploy-site', [
+        'hostname' => 'withdb.com',
+        'sitesUser' => 'deploy',
+        'repositoryUrl' => 'git@github.com:user/repo.git',
+        'repositoryBranch' => 'main',
+        'phpVersion' => '8.4',
+        'databaseName' => 'withdb_com',
+        'databaseUser' => 'withdb_com',
+        'databasePassword' => 'db_password',
+    ])->render();
+
+    expect($script)
+        ->toContain('export DB_DATABASE="withdb_com"')
+        ->toContain('export DB_USERNAME="withdb_com"')
+        ->toContain('export DB_PASSWORD="db_password"');
+});
+
+test('deploy script does not include database credentials when site does not have them', function () {
+    $script = view('scripts.deploy-site', [
+        'hostname' => 'example.com',
+        'sitesUser' => 'deploy',
+        'repositoryUrl' => 'git@github.com:user/repo.git',
+        'repositoryBranch' => 'main',
+        'phpVersion' => '8.4',
+    ])->render();
+
+    expect($script)
+        ->not->toContain('export DB_DATABASE=')
+        ->not->toContain('export DB_USERNAME=')
+        ->not->toContain('export DB_PASSWORD=');
+});

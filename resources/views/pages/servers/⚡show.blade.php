@@ -95,13 +95,9 @@ new class extends Component
 
         $this->authorize('delete', $site);
 
-        $hostname = $site->hostname;
+        UninstallSite::dispatch($site->id);
 
-        $site->delete();
-
-        UninstallSite::dispatch($this->serverId, $hostname);
-
-        session()->flash('status', 'Site deleted and will be removed from server shortly.');
+        session()->flash('status', 'Site deletion in progress. Database and files will be removed shortly.');
     }
 
     public function delete(): void

@@ -562,10 +562,10 @@ test('delete site dispatches uninstall job with correct params', function () {
     Livewire::test('pages::servers.show', ['server' => $server->id])
         ->call('deleteSite', $site->id);
 
-    Bus::assertDispatched(UninstallSite::class, fn ($job) => $job->serverId === $server->id && $job->hostname === 'delete-me.com');
+    Bus::assertDispatched(UninstallSite::class, fn ($job) => $job->siteId === $site->id);
 });
 
-test('delete site removes site from database', function () {
+test('delete site does not immediately remove site from database', function () {
     Bus::fake();
 
     $this->actingAs($this->user);
@@ -591,7 +591,7 @@ test('delete site removes site from database', function () {
     Livewire::test('pages::servers.show', ['server' => $server->id])
         ->call('deleteSite', $site->id);
 
-    expect(Site::find($site->id))->toBeNull();
+    expect(Site::find($site->id))->not->toBeNull();
 });
 
 test('user cannot delete sites from other users servers', function () {

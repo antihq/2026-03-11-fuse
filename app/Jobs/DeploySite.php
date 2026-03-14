@@ -57,6 +57,9 @@ class DeploySite implements ShouldQueue
                 'phpVersion' => $site->php_version,
                 'hookBeforeUpdatingRepository' => $site->hook_before_updating_repository,
                 'hookAfterUpdatingRepository' => $site->hook_after_updating_repository,
+                'databaseName' => $site->database_name,
+                'databaseUser' => $site->database_user,
+                'databasePassword' => $site->database_password,
             ])->render(),
             'timeout' => 240,
             'options' => [

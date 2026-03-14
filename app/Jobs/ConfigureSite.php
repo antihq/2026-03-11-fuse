@@ -8,6 +8,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Bus;
 use Throwable;
 
 class ConfigureSite implements ShouldQueue
@@ -76,9 +77,10 @@ class ConfigureSite implements ShouldQueue
 
         if ($importsTask->successful()) {
             $site->update([
-                'status' => 'ready',
                 'configured_at' => now(),
             ]);
+
+            Bus::dispatch(new CreateSiteDatabase($site->id));
         } else {
             $site->update(['status' => 'failed']);
         }

@@ -10,6 +10,12 @@ PHP_VERSION="{{ $phpVersion }}"
 SITE_DIR="/home/$SITES_USER/$HOSTNAME"
 REPO_DIR="$SITE_DIR/repository"
 
+@isset($databaseName)
+export DB_DATABASE="{{ $databaseName }}"
+export DB_USERNAME="{{ $databaseUser }}"
+export DB_PASSWORD="{{ $databasePassword }}"
+@endisset
+
 echo "=== Starting deployment for $HOSTNAME ==="
 
 cd "$SITE_DIR"

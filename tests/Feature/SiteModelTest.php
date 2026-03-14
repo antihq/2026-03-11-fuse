@@ -214,3 +214,126 @@ test('envPath returns correct path for site', function () {
 
     expect($site->envPath())->toBe($expectedPath);
 });
+
+test('site database fields can be set', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'database_name' => 'example_com',
+        'database_user' => 'example_com',
+        'database_password' => 'secure_password',
+    ]);
+
+    expect($site)
+        ->database_name->toBe('example_com')
+        ->database_user->toBe('example_com')
+        ->database_password->toBe('secure_password');
+});
+
+test('site database_password is encrypted at rest', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'database_password' => 'secure_password',
+    ]);
+
+    $rawValue = DB::table('sites')->where('id', $site->id)->value('database_password');
+
+    expect($rawValue)->not->toBe('secure_password')
+        ->and($rawValue)->toStartWith('eyJ');
+});
+
+test('site database_password can be decrypted and accessed', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'database_password' => 'secure_password',
+    ]);
+
+    expect($site->database_password)->toBe('secure_password');
+});
+
+test('site database_password is hidden from array serialization', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'database_password' => 'secure_password',
+    ]);
+
+    $array = $site->toArray();
+
+    expect($array)->not->toHaveKey('database_password');
+});
+
+test('site database_password is hidden from json serialization', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'database_password' => 'secure_password',
+    ]);
+
+    $json = $site->toJson();
+
+    expect($json)
+        ->not->toContain('database_password')
+        ->not->toContain('secure_password');
+});
+
+test('site database_created_at can be set and is cast to datetime', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'database_created_at' => now(),
+    ]);
+
+    expect($site->database_created_at)
+        ->not->toBeNull()
+        ->toBeInstanceOf(DateTimeInterface::class);
+});
+
+test('site database_created_at defaults to null', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+    ]);
+
+    expect($site->database_created_at)->toBeNull();
+});
+
+test('defaultAfterHook includes database credential sed commands', function () {
+    $hook = Site::defaultAfterHook('8.4');
+
+    expect($hook)
+        ->toContain('if [ -n "$DB_DATABASE" ]; then')
+        ->toContain('sed -i "s|^DB_DATABASE=.*|DB_DATABASE=$DB_DATABASE|g" .env')
+        ->toContain('sed -i "s|^DB_USERNAME=.*|DB_USERNAME=$DB_USERNAME|g" .env')
+        ->toContain('sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD|g" .env');
+});

@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\Server;
+use App\Models\Site;
 use App\Models\Task;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -22,13 +22,13 @@ class UninstallSite implements ShouldQueue
     public int $timeout = 60;
 
     public function __construct(
-        public int $serverId,
-        public string $hostname,
+        public int $siteId
     ) {}
 
     public function handle(): void
     {
-        $server = Server::with('user')->findOrFail($this->serverId);
+        $site = Site::with('server.user')->findOrFail($this->siteId);
+        $server = $site->server;
         $user = $server->user;
 
         if (empty($user->ssh_private_key)) {
@@ -40,17 +40,24 @@ class UninstallSite implements ShouldQueue
             'server_id' => $server->id,
             'ssh_user' => 'root',
             'script' => view('scripts.uninstall-site', [
-                'hostname' => $this->hostname,
+                'hostname' => $site->hostname,
                 'sitesUser' => $server->sites_user,
+                'databaseName' => $site->database_name,
+                'databaseUser' => $site->database_user,
+                'mysqlRootPassword' => $server->mysql_root_password,
             ])->render(),
             'timeout' => 30,
         ]);
 
         $task->run();
+
+        if ($task->successful()) {
+            $site->delete();
+        }
     }
 
     public function failed(?Throwable $e): void
     {
-        // Site already deleted from database, nothing to update
+        // Site not deleted on failure, can be retried
     }
 }
