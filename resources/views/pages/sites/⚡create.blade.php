@@ -82,6 +82,29 @@ new class extends Component
 
     <flux:heading class="mb-8">Add Site</flux:heading>
 
+    @if($this->server->server_public_key)
+        <div class="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <flux:heading size="sm">Deploy Key Required</flux:heading>
+            <flux:text class="mt-2">
+                Before creating a site, add this server's deploy key to your repository's deploy keys:
+            </flux:text>
+
+            <div class="flex justify-between items-center mt-2">
+                <code class="block overflow-auto break-all text-sm flex-1 mr-4">
+                    {{ $this->server->server_public_key }}
+                </code>
+                <div x-data="{ copied: false }">
+                    <flux:button
+                        size="sm"
+                        x-on:click="navigator.clipboard.writeText('{{ $this->server->server_public_key }}'); copied = true; setTimeout(() => copied = false, 2000)"
+                    >
+                        <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                    </flux:button>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <form wire:submit="save" class="max-w-lg space-y-8">
         <flux:input wire:model="hostname" label="Hostname" placeholder="example.com" />
 

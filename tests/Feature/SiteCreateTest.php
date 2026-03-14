@@ -265,3 +265,36 @@ test('site creation uses correct PHP version in default hook', function () {
         ->toContain('php8.3')
         ->not->toContain('php8.4');
 });
+
+test('site create shows deploy key warning when server has key', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 2048,
+        'provisioned_at' => now(),
+        'server_public_key' => 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5 deploy@server',
+    ]);
+
+    Livewire::test('pages::sites.create', ['server' => $server->id])
+        ->assertSee('Deploy Key Required')
+        ->assertSee('ssh-ed25519 AAAAC3NzaC1lZDI1NTE5 deploy@server');
+});
+
+test('site create hides deploy key warning when server has no key', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 2048,
+        'provisioned_at' => now(),
+        'server_public_key' => null,
+    ]);
+
+    Livewire::test('pages::sites.create', ['server' => $server->id])
+        ->assertDontSee('Deploy Key Required');
+});

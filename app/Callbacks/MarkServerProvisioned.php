@@ -2,6 +2,7 @@
 
 namespace App\Callbacks;
 
+use App\Jobs\RetrieveServerPublicKey;
 use App\Models\Server;
 use App\Models\Task;
 
@@ -21,6 +22,8 @@ class MarkServerProvisioned
                 'provisioned_at' => now(),
                 'provision_task_id' => null,
             ]);
+
+            RetrieveServerPublicKey::dispatch($this->serverId);
         } else {
             $server->update([
                 'provision_status' => 'failed',

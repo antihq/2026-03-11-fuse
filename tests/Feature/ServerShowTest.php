@@ -675,3 +675,38 @@ test('show page displays settings link for sites', function () {
         ->assertSee('Settings')
         ->assertSee(route('servers.sites.settings', [$server, $site]));
 });
+
+test('show page displays deploy key when server has one', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Production Server',
+        'ip_address' => '192.168.1.100',
+        'ram_mb' => 2048,
+        'provisioned_at' => now(),
+        'server_public_key' => 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5 deploy@server',
+    ]);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->assertSee('Deploy Key')
+        ->assertSee('ssh-ed25519 AAAAC3NzaC1lZDI1NTE5 deploy@server')
+        ->assertSee('Add this public key');
+});
+
+test('show page hides deploy key section when server has no key', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Production Server',
+        'ip_address' => '192.168.1.100',
+        'ram_mb' => 2048,
+        'provisioned_at' => now(),
+        'server_public_key' => null,
+    ]);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->assertDontSee('Deploy Key')
+        ->assertDontSee('Add this public key');
+});

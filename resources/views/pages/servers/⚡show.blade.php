@@ -166,10 +166,42 @@ new class extends Component
             </dl>
         </div>
 
+        @if($this->server->server_public_key)
+            <div class="mt-6">
+                <flux:heading>Deploy Key</flux:heading>
+                <flux:text class="mt-2">
+                    Add this public key to your GitHub/GitLab/Bitbucket repository's deploy keys to enable deployments.
+                </flux:text>
+
+                <div class="flex justify-between items-center mt-2">
+                    <code class="block overflow-auto break-all text-sm flex-1 mr-4">
+                        {{ $this->server->server_public_key }}
+                    </code>
+                    <div x-data="{ copied: false }">
+                        <flux:button
+                            size="sm"
+                            x-on:click="navigator.clipboard.writeText('{{ $this->server->server_public_key }}'); copied = true; setTimeout(() => copied = false, 2000)"
+                        >
+                            <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                        </flux:button>
+                    </div>
+                </div>
+
+                <flux:text class="mt-4" variant="subtle">
+                    <strong>GitHub:</strong> Settings → Deploy keys → Add deploy key<br>
+                    <strong>GitLab:</strong> Settings → Repository → Deploy keys<br>
+                    <strong>Bitbucket:</strong> Repository settings → Access keys
+                </flux:text>
+            </div>
+        @endif
+
         <div class="space-y-4">
             <div class="flex items-center justify-between">
                 <flux:heading>Sites</flux:heading>
-                <flux:button href="{{ route('servers.sites.create', $this->server) }}" wire:navigate>Add Site</flux:button>
+                <div class="flex gap-2">
+                    <flux:button wire:click="$refresh" icon="arrow-path" wire:loading.attr="disabled">Refresh</flux:button>
+                    <flux:button href="{{ route('servers.sites.create', $this->server) }}" wire:navigate>Add Site</flux:button>
+                </div>
             </div>
 
             @if($this->server->sites->isEmpty())

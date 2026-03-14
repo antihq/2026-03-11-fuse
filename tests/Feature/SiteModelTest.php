@@ -176,3 +176,25 @@ test('defaultAfterHook includes Laravel artisan commands', function () {
         ->toContain('artisan event:cache')
         ->toContain('artisan storage:link');
 });
+
+test('defaultAfterHook includes APP_URL configuration command', function () {
+    $hook = Site::defaultAfterHook('8.4');
+
+    expect($hook)
+        ->toContain('APP_URL=')
+        ->toContain('https://');
+});
+
+test('defaultAfterHook APP_URL uses HOSTNAME variable', function () {
+    $hook = Site::defaultAfterHook('8.4');
+
+    expect($hook)
+        ->toContain('$HOSTNAME')
+        ->toContain('sed -i');
+});
+
+test('defaultAfterHook APP_URL is conditional on HOSTNAME being set', function () {
+    $hook = Site::defaultAfterHook('8.4');
+
+    expect($hook)->toContain('if [ -n "$HOSTNAME" ]');
+});

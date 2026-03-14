@@ -58,6 +58,9 @@ if [ -f "artisan" ]; then
     if [ ! -f ".env" ] && [ -f ".env.example" ]; then
         cp .env.example .env
         php{$phpVersion} artisan key:generate --force
+        if [ -n "\$HOSTNAME" ]; then
+            sed -i "s|^APP_URL=.*|APP_URL=https://\$HOSTNAME|g" .env
+        fi
     fi
 
     php{$phpVersion} artisan config:cache

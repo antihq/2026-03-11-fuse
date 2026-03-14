@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('sites_user')->default('deploy');
             $table->text('mysql_root_password')->nullable();
             $table->text('deploy_user_password')->nullable();
+            $table->text('server_public_key')->nullable();
             $table->timestamps();
         });
     }
