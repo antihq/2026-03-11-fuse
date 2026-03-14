@@ -410,3 +410,95 @@ test('sites user can be updated via edit page', function () {
 
     expect($server->fresh()->sites_user)->toBe('webmaster');
 });
+
+test('index shows provision link for pending server names', function () {
+    $this->actingAs($this->user);
+
+    Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Pending Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => null,
+    ]);
+
+    Livewire::test('pages::servers.index')
+        ->assertSee(route('servers.provision', 1));
+});
+
+test('index shows show link for provisioned server names', function () {
+    $this->actingAs($this->user);
+
+    Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Provisioned Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    Livewire::test('pages::servers.index')
+        ->assertSee(route('servers.show', 1));
+});
+
+test('index shows provision menu item for pending servers', function () {
+    $this->actingAs($this->user);
+
+    Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Pending Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => null,
+    ]);
+
+    Livewire::test('pages::servers.index')
+        ->assertSee('Provision');
+});
+
+test('index shows edit menu item for pending servers', function () {
+    $this->actingAs($this->user);
+
+    Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Pending Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => null,
+    ]);
+
+    Livewire::test('pages::servers.index')
+        ->assertSee('Edit');
+});
+
+test('index hides edit menu item for provisioned servers', function () {
+    $this->actingAs($this->user);
+
+    Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Provisioned Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    $component = Livewire::test('pages::servers.index');
+
+    $html = $component->html();
+    expect($html)->not->toContain('servers.edit');
+});
+
+test('user cannot edit provisioned servers', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Provisioned Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    Livewire::test('pages::servers.edit', ['server' => $server->id])
+        ->assertRedirect(route('servers.index'));
+});

@@ -57,7 +57,7 @@ new class extends Component
                             @if($server->provisioned_at)
                                 <a href="{{ route('servers.show', $server) }}" wire:navigate>{{ $server->name }}</a>
                             @else
-                                {{ $server->name }}
+                                <a href="{{ route('servers.provision', $server) }}" wire:navigate>{{ $server->name }}</a>
                             @endif
                         </flux:table.cell>
                         <flux:table.cell class="text-xs font-mono">{{ $server->ip_address }}</flux:table.cell>
@@ -76,8 +76,10 @@ new class extends Component
                                 <flux:menu>
                                     @if($server->provisioned_at)
                                         <flux:menu.item href="{{ route('servers.show', $server) }}" wire:navigate>View</flux:menu.item>
+                                    @else
+                                        <flux:menu.item href="{{ route('servers.provision', $server) }}" wire:navigate>Provision</flux:menu.item>
+                                        <flux:menu.item href="{{ route('servers.edit', $server) }}" wire:navigate>Edit</flux:menu.item>
                                     @endif
-                                    <flux:menu.item href="{{ route('servers.edit', $server) }}" wire:navigate>Edit</flux:menu.item>
                                     <flux:menu.separator />
                                     <flux:menu.item variant="danger" wire:click="deleteServer({{ $server->id }})" wire:confirm="Are you sure you want to delete this server?">Delete</flux:menu.item>
                                 </flux:menu>

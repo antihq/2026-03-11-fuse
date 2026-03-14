@@ -30,7 +30,7 @@ new class extends Component
     {
         $serverModel = Server::findOrFail($server);
 
-        if ($serverModel->user_id !== auth()->id()) {
+        if ($serverModel->user_id !== auth()->id() || $serverModel->provisioned_at) {
             $this->redirect(route('servers.index'), navigate: true);
 
             return;
