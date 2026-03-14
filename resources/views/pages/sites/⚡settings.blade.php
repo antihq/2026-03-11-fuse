@@ -65,45 +65,41 @@ new class extends Component
 ?>
 <div>
     <div class="mb-6">
-        <flux:button variant="ghost" href="{{ route('servers.show', $this->server) }}" wire:navigate>
+        <flux:button href="{{ route('servers.show', $this->server) }}" wire:navigate>
             &larr; Back to {{ $this->server->name }}
         </flux:button>
     </div>
 
-    <h1 class="text-xl font-semibold mb-1">Site Settings</h1>
-    <p class="text-zinc-500 mb-6">{{ $this->site->hostname }}</p>
+    <flux:heading>Site Settings</flux:heading>
+    <flux:text class="mb-8">{{ $this->site->hostname }}</flux:text>
 
     @if(session('status'))
-        <flux:callout variant="success" icon="check-circle" class="mb-6">
-            {{ session('status') }}
-        </flux:callout>
+        <div class="mt-8">
+            <flux:heading>{{ session('status') }}</flux:heading>
+        </div>
     @endif
 
-    <form wire:submit="save" class="space-y-6 max-w-3xl">
-        <div>
-            <flux:textarea
-                wire:model="hook_before_updating_repository"
-                label="Hook: Before Updating Repository"
-                rows="6"
-                placeholder="Runs before git pull/clone. Current working directory: repository/"
-            />
-            <p class="text-sm text-zinc-500 mt-1">
-                This hook runs in the repository directory before pulling changes.
-            </p>
-        </div>
+    <form wire:submit="save" class="max-w-lg space-y-8">
+        <flux:textarea
+            wire:model="hook_before_updating_repository"
+            label="Hook: Before Updating Repository"
+            rows="6"
+            placeholder="Runs before git pull/clone. Current working directory: repository/"
+        />
+        <p class="text-sm mt-1">
+            This hook runs in the repository directory before pulling changes.
+        </p>
 
-        <div>
-            <flux:textarea
-                wire:model="hook_after_updating_repository"
-                label="Hook: After Updating Repository"
-                rows="20"
-                placeholder="Runs after git pull/clone. Current working directory: repository/"
-            />
-            <p class="text-sm text-zinc-500 mt-1">
-                This hook runs after pulling changes. Use this for composer install, npm build, artisan commands, etc.
-            </p>
-        </div>
+        <flux:textarea
+            wire:model="hook_after_updating_repository"
+            label="Hook: After Updating Repository"
+            rows="20"
+            placeholder="Runs after git pull/clone. Current working directory: repository/"
+        />
+        <p class="text-sm mt-1">
+            This hook runs after pulling changes. Use this for composer install, npm build, artisan commands, etc.
+        </p>
 
-        <flux:button type="submit" variant="primary">Save Hooks</flux:button>
+        <flux:button type="submit">Save Hooks</flux:button>
     </form>
 </div>

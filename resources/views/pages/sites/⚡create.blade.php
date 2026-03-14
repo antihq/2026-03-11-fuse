@@ -75,14 +75,14 @@ new class extends Component
 ?>
 <div>
     <div class="mb-6">
-        <flux:button variant="ghost" href="{{ route('servers.show', $this->server) }}" wire:navigate>
+        <flux:button href="{{ route('servers.show', $this->server) }}" wire:navigate>
             &larr; Back to {{ $this->server->name }}
         </flux:button>
     </div>
 
-    <h1 class="text-xl font-semibold mb-4">Add Site</h1>
+    <flux:heading class="mb-8">Add Site</flux:heading>
 
-    <form wire:submit="save" class="space-y-4 max-w-lg">
+    <form wire:submit="save" class="max-w-lg space-y-8">
         <flux:input wire:model="hostname" label="Hostname" placeholder="example.com" />
 
         <flux:select wire:model="php_version" label="PHP Version">
@@ -95,6 +95,6 @@ new class extends Component
 
         <flux:input wire:model="repository_branch" label="Branch" placeholder="main" />
 
-        <flux:button type="submit" variant="primary">Create Site</flux:button>
+        <flux:button type="submit">Create Site</flux:button>
     </form>
 </div>
