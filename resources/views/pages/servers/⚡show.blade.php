@@ -118,7 +118,7 @@ new class extends Component
     }
 };
 ?>
-<div class="max-w-lg">
+<div>
     <div class="flex items-center justify-between mb-8">
         <flux:heading>{{ $this->server->name }}</flux:heading>
         <div class="flex gap-2">
@@ -129,7 +129,7 @@ new class extends Component
     </div>
 
     <div class="space-y-6">
-        <div class="space-y-4">
+        <div class="max-w-lg space-y-4">
             <div>
                 <flux:heading>Server Status</flux:heading>
                 <flux:text class="mt-2">This server has been provisioned.</flux:text>
@@ -209,19 +209,36 @@ new class extends Component
                                     @endif
                                 </flux:table.cell>
                                 <flux:table.cell>
-                                    <div class="flex gap-2">
-                                        <flux:button size="sm" href="{{ route('servers.sites.settings', [$this->server, $site]) }}" wire:navigate>
-                                            Settings
-                                        </flux:button>
-                                        @if(in_array($site->status, ['ready', 'active']))
-                                            <flux:button size="sm" wire:click="deploy({{ $site->id }})" wire:confirm="Deploy {{ $site->hostname }}?">
-                                                {{ $site->status === 'ready' ? 'Deploy' : 'Deploy Again' }}
-                                            </flux:button>
-                                        @endif
-                                        <flux:button size="sm" variant="danger" wire:click="deleteSite({{ $site->id }})" wire:confirm="Delete {{ $site->hostname }}? This cannot be undone.">
-                                            Delete
-                                        </flux:button>
-                                    </div>
+                                    <flux:dropdown>
+                                        <flux:button size="sm" icon="ellipsis-horizontal" />
+                                        <flux:menu>
+                                            <flux:menu.item
+                                                href="{{ route('servers.sites.settings', [$this->server, $site]) }}"
+                                                wire:navigate
+                                                icon="cog">
+                                                Settings
+                                            </flux:menu.item>
+
+                                            @if(in_array($site->status, ['ready', 'active']))
+                                                <flux:menu.item
+                                                    wire:click="deploy({{ $site->id }})"
+                                                    wire:confirm="Deploy {{ $site->hostname }}?"
+                                                    icon="arrow-up-tray">
+                                                    {{ $site->status === 'ready' ? 'Deploy' : 'Deploy Again' }}
+                                                </flux:menu.item>
+                                            @endif
+
+                                            <flux:menu.separator />
+
+                                            <flux:menu.item
+                                                variant="danger"
+                                                wire:click="deleteSite({{ $site->id }})"
+                                                wire:confirm="Delete {{ $site->hostname }}? This cannot be undone."
+                                                icon="trash">
+                                                Delete
+                                            </flux:menu.item>
+                                        </flux:menu>
+                                    </flux:dropdown>
                                 </flux:table.cell>
                             </flux:table.row>
                         @endforeach
