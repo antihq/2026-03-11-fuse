@@ -26,6 +26,8 @@ class Site extends Model
         'database_user',
         'database_password',
         'database_created_at',
+        'queue_enabled',
+        'queue_processes',
     ];
 
     protected $hidden = [
@@ -40,6 +42,8 @@ class Site extends Model
             'deployed_at' => 'datetime',
             'database_password' => 'encrypted',
             'database_created_at' => 'datetime',
+            'queue_enabled' => 'boolean',
+            'queue_processes' => 'integer',
         ];
     }
 
@@ -56,6 +60,16 @@ class Site extends Model
     public function caddyfilePath(): string
     {
         return "/home/{$this->server->sites_user}/{$this->hostname}/Caddyfile";
+    }
+
+    public function supervisorConfigPath(): string
+    {
+        return "/etc/supervisor/conf.d/site-{$this->id}.conf";
+    }
+
+    public function queueLogPath(): string
+    {
+        return "/home/{$this->server->sites_user}/{$this->hostname}/storage/logs";
     }
 
     public static function defaultAfterHook(string $phpVersion): string

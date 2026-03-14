@@ -570,6 +570,7 @@ curl -sS https://getcomposer.org/installer | php -- --2
 mv composer.phar /usr/local/bin/composer
 
 echo "$SITES_USER ALL=(root) NOPASSWD: /usr/local/bin/composer self-update*" > /etc/sudoers.d/composer
+echo "$SITES_USER ALL=NOPASSWD: /usr/bin/supervisorctl *" > /etc/sudoers.d/supervisor
 
 mkdir -p /home/$SITES_USER/.config/composer
 touch /home/$SITES_USER/.config/composer/auth.json

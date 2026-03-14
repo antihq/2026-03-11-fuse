@@ -341,3 +341,19 @@ test('generate creates mysql user and database with sites_user variable', functi
         ->toContain("GRANT ALL PRIVILEGES ON *.* TO '\$SITES_USER'@'localhost'")
         ->toContain('CREATE DATABASE $SITES_USER');
 });
+
+test('script includes supervisorctl sudoers entry', function () {
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 2048,
+        'sites_user' => 'deploy',
+    ]);
+
+    $generator = new ProvisioningScriptGenerator($server, '');
+    $script = $generator->generate();
+
+    expect($script)
+        ->toContain('echo "$SITES_USER ALL=NOPASSWD: /usr/bin/supervisorctl *" > /etc/sudoers.d/supervisor');
+});

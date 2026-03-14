@@ -1,6 +1,8 @@
 <?php
 
 use App\Helpers\RemoteFile;
+use App\Jobs\InstallSiteQueue;
+use App\Jobs\UninstallSiteQueue;
 use App\Models\Server;
 use App\Models\Site;
 use Livewire\Attributes\Computed;
@@ -25,6 +27,9 @@ new class extends Component
     #[Validate('nullable|string')]
     public string $envContent = '';
 
+    #[Validate('nullable|integer|min:1|max:10')]
+    public string $queue_processes = '1';
+
     public bool $envLoaded = false;
 
     public string $envLoadError = '';
@@ -44,6 +49,7 @@ new class extends Component
         $this->siteId = $siteModel->id;
         $this->hook_before_updating_repository = $siteModel->hook_before_updating_repository ?? '';
         $this->hook_after_updating_repository = $siteModel->hook_after_updating_repository ?? '';
+        $this->queue_processes = (string) $siteModel->queue_processes;
     }
 
     #[Computed]
@@ -65,10 +71,38 @@ new class extends Component
         $this->site()->update([
             'hook_before_updating_repository' => $this->hook_before_updating_repository ?: null,
             'hook_after_updating_repository' => $this->hook_after_updating_repository ?: null,
+            'queue_processes' => (int) $this->queue_processes,
         ]);
 
         session()->flash('status', 'Deployment hooks updated successfully.');
 
+        $this->redirect(route('servers.sites.settings', [$this->server, $this->site]), navigate: true);
+    }
+
+    public function enableQueue(): void
+    {
+        $site = $this->site();
+
+        $site->update([
+            'queue_enabled' => true,
+            'queue_processes' => (int) $this->queue_processes,
+        ]);
+
+        dispatch(new InstallSiteQueue($site->id));
+
+        session()->flash('queueStatus', 'Queue workers enabled successfully.');
+        $this->redirect(route('servers.sites.settings', [$this->server, $this->site]), navigate: true);
+    }
+
+    public function disableQueue(): void
+    {
+        $site = $this->site();
+
+        $site->update(['queue_enabled' => false]);
+
+        dispatch(new UninstallSiteQueue($site->id));
+
+        session()->flash('queueStatus', 'Queue workers disabled successfully.');
         $this->redirect(route('servers.sites.settings', [$this->server, $this->site]), navigate: true);
     }
 
@@ -157,6 +191,38 @@ new class extends Component
 
         <flux:button type="submit">Save Hooks</flux:button>
     </form>
+
+    <div class="max-w-lg mt-16 space-y-8">
+        <flux:heading class="mb-2">Queue Workers</flux:heading>
+        <flux:text class="mb-4">Manage Laravel queue workers for this site using Supervisor</flux:text>
+
+        @if(session('queueStatus'))
+            <flux:text color="green" class="mb-4">{{ session('queueStatus') }}</flux:text>
+        @endif
+
+        @if($this->site->queue_enabled)
+            <div class="flex items-center gap-4 mb-4">
+                <flux:text color="green">Queue workers are enabled</flux:text>
+                <flux:button wire:click="disableQueue" variant="danger">Disable Queues</flux:button>
+            </div>
+        @else
+            <div class="flex items-center gap-4 mb-4">
+                <flux:text>Queue workers are disabled</flux:text>
+                <flux:button wire:click="enableQueue">Enable Queues</flux:button>
+            </div>
+        @endif
+
+        <flux:input
+            wire:model="queue_processes"
+            label="Number of Worker Processes"
+            type="number"
+            min="1"
+            max="10"
+        />
+        <p class="text-sm mt-1">
+            Number of queue worker processes to run (1-10). Requires restarting queues to take effect.
+        </p>
+    </div>
 
     <div class="max-w-4xl mt-16">
         <flux:heading class="mb-2">Environment File</flux:heading>

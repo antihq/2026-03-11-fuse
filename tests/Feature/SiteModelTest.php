@@ -337,3 +337,61 @@ test('defaultAfterHook includes database credential sed commands', function () {
         ->toContain('sed -i "s|^DB_USERNAME=.*|DB_USERNAME=$DB_USERNAME|g" .env')
         ->toContain('sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD|g" .env');
 });
+
+test('supervisorConfigPath returns correct path', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+    ]);
+
+    expect($site->supervisorConfigPath())->toBe('/etc/supervisor/conf.d/site-'.$site->id.'.conf');
+});
+
+test('queueLogPath returns correct path', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+    ]);
+
+    $expectedPath = "/home/{$this->server->sites_user}/{$site->hostname}/storage/logs";
+
+    expect($site->queueLogPath())->toBe($expectedPath);
+});
+
+test('queue_enabled can be set and is cast to boolean', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'queue_enabled' => true,
+    ]);
+
+    expect($site->queue_enabled)->toBeTrue();
+    expect($site->queue_enabled)->toBeBool();
+});
+
+test('queue_processes can be set and is cast to integer', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'queue_processes' => 5,
+    ]);
+
+    expect($site->queue_processes)->toBe(5);
+    expect($site->queue_processes)->toBeInt();
+});

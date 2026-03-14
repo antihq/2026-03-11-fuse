@@ -68,6 +68,10 @@ class DeploySite implements ShouldQueue
         ]);
 
         $task->runInBackground();
+
+        if ($site->queue_enabled) {
+            dispatch(new InstallSiteQueue($site->id));
+        }
     }
 
     public function failed(?Throwable $e): void

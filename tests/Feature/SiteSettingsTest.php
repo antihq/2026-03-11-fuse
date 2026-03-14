@@ -1,9 +1,12 @@
 <?php
 
+use App\Jobs\InstallSiteQueue;
+use App\Jobs\UninstallSiteQueue;
 use App\Models\Server;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -191,4 +194,69 @@ test('user cannot load env for another users site', function () {
     Livewire::actingAs($this->user)
         ->test('pages::sites.settings', ['server' => $anotherServer->id, 'site' => $anotherSite->id])
         ->assertStatus(403);
+});
+
+test('queue workers section is displayed on settings page', function () {
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+        ->assertSee('Queue Workers')
+        ->assertSee('Number of Worker Processes');
+});
+
+test('enableQueue dispatches InstallSiteQueue job', function () {
+    Queue::fake();
+
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+        ->set('queue_processes', '3')
+        ->call('enableQueue')
+        ->assertRedirect(route('servers.sites.settings', [$this->server, $this->site]));
+
+    Queue::assertPushed(InstallSiteQueue::class);
+
+    expect($this->site->fresh())
+        ->queue_enabled->toBeTrue()
+        ->queue_processes->toBe(3);
+});
+
+test('disableQueue dispatches UninstallSiteQueue job', function () {
+    $this->site->update(['queue_enabled' => true]);
+    Queue::fake();
+
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+        ->call('disableQueue')
+        ->assertRedirect(route('servers.sites.settings', [$this->server, $this->site]));
+
+    Queue::assertPushed(UninstallSiteQueue::class);
+
+    expect($this->site->fresh()->queue_enabled)->toBeFalse();
+});
+
+test('queue_processes can be updated', function () {
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+        ->set('queue_processes', '5')
+        ->call('save')
+        ->assertRedirect(route('servers.sites.settings', [$this->server, $this->site]));
+
+    expect($this->site->fresh()->queue_processes)->toBe(5);
+});
+
+test('queue_processes validation allows values between 1 and 10', function () {
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+        ->set('queue_processes', '0')
+        ->call('save')
+        ->assertHasErrors(['queue_processes' => 'min']);
+
+    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+        ->set('queue_processes', '11')
+        ->call('save')
+        ->assertHasErrors(['queue_processes' => 'max']);
 });

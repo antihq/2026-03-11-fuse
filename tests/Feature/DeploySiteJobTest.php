@@ -2,11 +2,13 @@
 
 use App\Callbacks\MarkSiteDeployed;
 use App\Jobs\DeploySite;
+use App\Jobs\InstallSiteQueue;
 use App\Models\Server;
 use App\Models\Site;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
     $this->user = User::factory()->withSshKeys()->create();
@@ -258,4 +260,40 @@ test('deploy script does not include database credentials when site does not hav
         ->not->toContain('export DB_DATABASE=')
         ->not->toContain('export DB_USERNAME=')
         ->not->toContain('export DB_PASSWORD=');
+});
+
+test('handle dispatches InstallSiteQueue when queue_enabled is true', function () {
+    Queue::fake();
+    Process::fake([
+        '*' => Process::sequence()
+            ->push(Process::result(output: 'mkdir output', exitCode: 0))
+            ->push(Process::result(output: 'scp output', exitCode: 0))
+            ->push(Process::result(output: 'Background script started', exitCode: 0)),
+    ]);
+
+    $this->site->update(['queue_enabled' => true, 'queue_processes' => 3]);
+
+    $job = new DeploySite($this->site->id);
+    $job->handle();
+
+    Queue::assertPushed(InstallSiteQueue::class, function ($job) {
+        return $job->siteId === $this->site->id;
+    });
+});
+
+test('handle does not dispatch InstallSiteQueue when queue_enabled is false', function () {
+    Queue::fake();
+    Process::fake([
+        '*' => Process::sequence()
+            ->push(Process::result(output: 'mkdir output', exitCode: 0))
+            ->push(Process::result(output: 'scp output', exitCode: 0))
+            ->push(Process::result(output: 'Background script started', exitCode: 0)),
+    ]);
+
+    $this->site->update(['queue_enabled' => false]);
+
+    $job = new DeploySite($this->site->id);
+    $job->handle();
+
+    Queue::assertNotPushed(InstallSiteQueue::class);
 });
