@@ -49,17 +49,17 @@ new class extends Component
             <flux:table.rows>
                 @foreach($this->servers as $server)
                     <flux:table.row :key="$server->id">
-                        <flux:table.cell>
+                        <flux:table.cell variant="strong">
                             @if($server->provisioned_at)
                                 <a href="{{ route('servers.show', $server) }}" wire:navigate>{{ $server->name }}</a>
                             @else
                                 {{ $server->name }}
                             @endif
                         </flux:table.cell>
-                        <flux:table.cell>{{ $server->ip_address }}</flux:table.cell>
+                        <flux:table.cell class="text-xs font-mono">{{ $server->ip_address }}</flux:table.cell>
                         <flux:table.cell align="end">
                             <flux:dropdown>
-                                <flux:button size="sm" icon="ellipsis-horizontal" />
+                                <flux:button size="sm" icon="ellipsis-horizontal" variant="ghost" />
                                 <flux:menu>
                                     @if($server->provisioned_at)
                                         <flux:menu.item href="{{ route('servers.show', $server) }}" wire:navigate>View</flux:menu.item>
