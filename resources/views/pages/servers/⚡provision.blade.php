@@ -123,10 +123,10 @@ new class extends Component
                     <div class="flex justify-between mb-2">
                         <flux:heading>Provisioning Output</flux:heading>
                         <div class="flex gap-2">
-                            <flux:button size="sm" variant="ghost" wire:click="$refresh">
+                            <flux:button size="sm" wire:click="$refresh">
                                 Refresh
                             </flux:button>
-                            <flux:button size="sm" variant="ghost" wire:click="fetchOutput">
+                            <flux:button size="sm" wire:click="fetchOutput">
                                 View Live Output
                             </flux:button>
                         </div>
@@ -151,7 +151,6 @@ new class extends Component
                 <div x-data="{ copied: false }">
                     <flux:button
                         size="sm"
-                        variant="ghost"
                         x-on:click="navigator.clipboard.writeText('curl -sSL {{ $sshSetupUrl }} | sudo bash'); copied = true; setTimeout(() => copied = false, 2000)"
                     >
                         <span x-text="copied ? 'Copied!' : 'Copy'"></span>

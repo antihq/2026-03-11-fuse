@@ -30,14 +30,14 @@ new class extends Component
     }
 };
 ?>
-<div>
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-xl font-semibold">Servers</h1>
-        <flux:button variant="primary" href="{{ route('servers.create') }}" wire:navigate>Add Server</flux:button>
+<div class="max-w-lg">
+    <div class="flex items-center justify-between mb-8">
+        <flux:heading>Servers</flux:heading>
+        <flux:button href="{{ route('servers.create') }}" wire:navigate>Add Server</flux:button>
     </div>
 
     @if($this->servers->isEmpty())
-        <p class="text-zinc-500">No servers yet.</p>
+        <p>No servers yet.</p>
     @else
         <flux:table>
             <flux:table.columns>
@@ -49,9 +49,9 @@ new class extends Component
             <flux:table.rows>
                 @foreach($this->servers as $server)
                     <flux:table.row :key="$server->id">
-                        <flux:table.cell variant="strong">
+                        <flux:table.cell>
                             @if($server->provisioned_at)
-                                <a href="{{ route('servers.show', $server) }}" wire:navigate class="hover:underline">{{ $server->name }}</a>
+                                <a href="{{ route('servers.show', $server) }}" wire:navigate>{{ $server->name }}</a>
                             @else
                                 {{ $server->name }}
                             @endif
@@ -59,7 +59,7 @@ new class extends Component
                         <flux:table.cell>{{ $server->ip_address }}</flux:table.cell>
                         <flux:table.cell align="end">
                             <flux:dropdown>
-                                <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" />
+                                <flux:button size="sm" icon="ellipsis-horizontal" />
                                 <flux:menu>
                                     @if($server->provisioned_at)
                                         <flux:menu.item icon="eye" href="{{ route('servers.show', $server) }}" wire:navigate>View</flux:menu.item>

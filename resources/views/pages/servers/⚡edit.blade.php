@@ -64,16 +64,18 @@ new class extends Component
     }
 };
 ?>
-<div>
-    <h1 class="text-xl font-semibold mb-4">Edit Server</h1>
+<div class="max-w-lg">
+    <div class="mb-8">
+        <flux:heading>Edit Server</flux:heading>
+    </div>
 
-    <form wire:submit="save" class="space-y-2">
+    <form wire:submit="save" class="space-y-8">
         <flux:input wire:model="name" label="Name" />
         <flux:input wire:model="ip_address" label="IP Address" />
         <flux:input wire:model="ram_mb" label="RAM (MB)" type="number" />
         <flux:input wire:model="sites_user" label="Sites User" />
         <flux:textarea wire:model="authorized_keys" label="SSH Keys" rows="3" />
 
-        <flux:button type="submit" variant="primary">Update</flux:button>
+        <flux:button type="submit">Update</flux:button>
     </form>
 </div>
