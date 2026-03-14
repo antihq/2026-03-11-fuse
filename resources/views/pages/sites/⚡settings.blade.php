@@ -1,5 +1,6 @@
 <?php
 
+use App\Helpers\RemoteFile;
 use App\Models\Server;
 use App\Models\Site;
 use Livewire\Attributes\Computed;
@@ -20,6 +21,15 @@ new class extends Component
 
     #[Validate('nullable|string')]
     public string $hook_after_updating_repository = '';
+
+    #[Validate('nullable|string')]
+    public string $envContent = '';
+
+    public bool $envLoaded = false;
+
+    public string $envLoadError = '';
+
+    public string $envSaveError = '';
 
     public function mount(int $server, int $site): void
     {
@@ -61,6 +71,51 @@ new class extends Component
 
         $this->redirect(route('servers.sites.settings', [$this->server, $this->site]), navigate: true);
     }
+
+    public function loadEnv(): void
+    {
+        $site = $this->site();
+
+        $this->authorize('view', $site);
+
+        try {
+            $content = RemoteFile::read($site, $site->envPath());
+
+            if ($content === '') {
+                $this->envLoadError = 'Unable to read .env file or file is empty.';
+
+                return;
+            }
+
+            $this->envContent = $content;
+            $this->envLoaded = true;
+            $this->envLoadError = '';
+        } catch (Exception $e) {
+            $this->envLoadError = 'Failed to load .env file: '.$e->getMessage();
+        }
+    }
+
+    public function saveEnv(): void
+    {
+        $site = $this->site();
+
+        $this->authorize('update', $site);
+
+        try {
+            $success = RemoteFile::write($site, $site->envPath(), $this->envContent);
+
+            if (! $success) {
+                $this->envSaveError = 'Failed to save .env file.';
+
+                return;
+            }
+
+            session()->flash('envStatus', '.env file saved successfully.');
+            $this->envSaveError = '';
+        } catch (Exception $e) {
+            $this->envSaveError = 'Failed to save .env file: '.$e->getMessage();
+        }
+    }
 };
 ?>
 <div>
@@ -74,7 +129,7 @@ new class extends Component
     <flux:text class="mb-8">{{ $this->site->hostname }}</flux:text>
 
     @if(session('status'))
-        <div class="mt-8">
+        <div class="mt-8 mb-4">
             <flux:heading>{{ session('status') }}</flux:heading>
         </div>
     @endif
@@ -102,4 +157,41 @@ new class extends Component
 
         <flux:button type="submit">Save Hooks</flux:button>
     </form>
+
+    <div class="max-w-4xl mt-16">
+        <flux:heading class="mb-2">Environment File</flux:heading>
+        <flux:text class="mb-4">Edit the .env file for this site</flux:text>
+
+        @if(!$envLoaded)
+            <flux:button wire:click="loadEnv">Load .env File</flux:button>
+        @endif
+
+        @if($envLoadError)
+            <flux:text color="red" class="mt-2">{{ $envLoadError }}</flux:text>
+        @endif
+
+        @if($envLoaded)
+            <form wire:submit="saveEnv" class="mt-4">
+                <flux:textarea
+                    wire:model="envContent"
+                    rows="30"
+                    placeholder="Environment variables..."
+                    monospace
+                />
+                <p class="text-sm mt-1">
+                    Path: {{ $this->site->envPath() }}
+                </p>
+
+                @if($envSaveError)
+                    <flux:text color="red" class="mt-2">{{ $envSaveError }}</flux:text>
+                @endif
+
+                @if(session('envStatus'))
+                    <flux:text color="green" class="mt-2">{{ session('envStatus') }}</flux:text>
+                @endif
+
+                <flux:button type="submit" class="mt-4">Save .env File</flux:button>
+            </form>
+        @endif
+    </div>
 </div>

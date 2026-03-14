@@ -38,6 +38,11 @@ class Site extends Model
         return $this->belongsTo(Server::class);
     }
 
+    public function envPath(): string
+    {
+        return "/home/{$this->server->sites_user}/{$this->hostname}/repository/.env";
+    }
+
     public static function defaultAfterHook(string $phpVersion): string
     {
         return <<<BASH

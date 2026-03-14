@@ -36,3 +36,27 @@ test('delete returns false when user does not own the server', function () {
 
     expect($policy->delete($this->otherUser, $this->site))->toBeFalse();
 });
+
+test('view returns true when user owns the server', function () {
+    $policy = new SitePolicy;
+
+    expect($policy->view($this->user, $this->site))->toBeTrue();
+});
+
+test('view returns false when user does not own the server', function () {
+    $policy = new SitePolicy;
+
+    expect($policy->view($this->otherUser, $this->site))->toBeFalse();
+});
+
+test('update returns true when user owns the server', function () {
+    $policy = new SitePolicy;
+
+    expect($policy->update($this->user, $this->site))->toBeTrue();
+});
+
+test('update returns false when user does not own the server', function () {
+    $policy = new SitePolicy;
+
+    expect($policy->update($this->otherUser, $this->site))->toBeFalse();
+});

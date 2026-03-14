@@ -11,6 +11,7 @@ beforeEach(function () {
         'name' => 'Test Server',
         'ip_address' => '192.168.1.1',
         'ram_mb' => 2048,
+        'sites_user' => 'fuse',
         'provisioned_at' => now(),
     ]);
 });
@@ -197,4 +198,19 @@ test('defaultAfterHook APP_URL is conditional on HOSTNAME being set', function (
     $hook = Site::defaultAfterHook('8.4');
 
     expect($hook)->toContain('if [ -n "$HOSTNAME" ]');
+});
+
+test('envPath returns correct path for site', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+    ]);
+
+    $expectedPath = "/home/{$this->server->sites_user}/example.com/repository/.env";
+
+    expect($site->envPath())->toBe($expectedPath);
 });
