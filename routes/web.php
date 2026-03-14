@@ -14,6 +14,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('servers/{server}/provision', 'pages::servers.provision')->name('servers.provision');
     Route::livewire('servers/{server}/sites/create', 'pages::sites.create')->name('servers.sites.create');
     Route::livewire('servers/{server}/sites/{site}/settings', 'pages::sites.settings')->name('servers.sites.settings');
+    Route::livewire('servers/{server}/sites/{site}/caddyfile', 'pages::sites.caddyfile')->name('servers.sites.caddyfile');
 });
 
 Route::get('/ssh-setup/{token}', [SshSetupController::class, 'show'])->name('ssh-setup.show');

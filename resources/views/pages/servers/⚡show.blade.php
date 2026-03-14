@@ -251,6 +251,13 @@ new class extends Component
                                                 Settings
                                             </flux:menu.item>
 
+                                            <flux:menu.item
+                                                href="{{ route('servers.sites.caddyfile', [$this->server, $site]) }}"
+                                                wire:navigate
+                                                icon="document-text">
+                                                Caddyfile
+                                            </flux:menu.item>
+
                                             @if(in_array($site->status, ['ready', 'active']))
                                                 <flux:menu.item
                                                     wire:click="deploy({{ $site->id }})"

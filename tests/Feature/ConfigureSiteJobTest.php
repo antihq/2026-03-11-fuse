@@ -186,3 +186,15 @@ test('site caddyfile script does not create maintenance page', function () {
         ->not->toContain('maintenance.html')
         ->not->toContain('@maintenance');
 });
+
+test('validate caddyfile script contains expected content', function () {
+    $script = view('scripts.validate-caddyfile', [
+        'caddyfilePath' => '/home/deploy/example.com/Caddyfile',
+    ])->render();
+
+    expect($script)
+        ->toContain('caddy validate')
+        ->toContain('--config "$CADDYFILE_PATH"')
+        ->toContain('--adapter caddyfile')
+        ->toContain('CADDYFILE_PATH="/home/deploy/example.com/Caddyfile"');
+});

@@ -676,6 +676,32 @@ test('show page displays settings link for sites', function () {
         ->assertSee(route('servers.sites.settings', [$server, $site]));
 });
 
+test('show page displays caddyfile link for sites', function () {
+    $this->actingAs($this->user);
+
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 1024,
+        'provisioned_at' => now(),
+    ]);
+
+    $site = Site::create([
+        'server_id' => $server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'status' => 'active',
+    ]);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->assertSee('Caddyfile')
+        ->assertSee(route('servers.sites.caddyfile', [$server, $site]));
+});
+
 test('show page displays deploy key when server has one', function () {
     $this->actingAs($this->user);
 

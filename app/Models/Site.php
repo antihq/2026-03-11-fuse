@@ -43,6 +43,11 @@ class Site extends Model
         return "/home/{$this->server->sites_user}/{$this->hostname}/repository/.env";
     }
 
+    public function caddyfilePath(): string
+    {
+        return "/home/{$this->server->sites_user}/{$this->hostname}/Caddyfile";
+    }
+
     public static function defaultAfterHook(string $phpVersion): string
     {
         return <<<BASH
