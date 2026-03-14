@@ -62,11 +62,11 @@ new class extends Component
                                 <flux:button size="sm" icon="ellipsis-horizontal" />
                                 <flux:menu>
                                     @if($server->provisioned_at)
-                                        <flux:menu.item icon="eye" href="{{ route('servers.show', $server) }}" wire:navigate>View</flux:menu.item>
+                                        <flux:menu.item href="{{ route('servers.show', $server) }}" wire:navigate>View</flux:menu.item>
                                     @endif
-                                    <flux:menu.item icon="pencil-square" href="{{ route('servers.edit', $server) }}" wire:navigate>Edit</flux:menu.item>
+                                    <flux:menu.item href="{{ route('servers.edit', $server) }}" wire:navigate>Edit</flux:menu.item>
                                     <flux:menu.separator />
-                                    <flux:menu.item icon="trash" variant="danger" wire:click="deleteServer({{ $server->id }})" wire:confirm="Are you sure you want to delete this server?">Delete</flux:menu.item>
+                                    <flux:menu.item variant="danger" wire:click="deleteServer({{ $server->id }})" wire:confirm="Are you sure you want to delete this server?">Delete</flux:menu.item>
                                 </flux:menu>
                             </flux:dropdown>
                         </flux:table.cell>
