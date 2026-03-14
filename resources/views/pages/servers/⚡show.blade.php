@@ -118,47 +118,49 @@ new class extends Component
     }
 };
 ?>
-<div>
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-xl font-semibold">{{ $this->server->name }}</h1>
+<div class="max-w-lg">
+    <div class="flex items-center justify-between mb-8">
+        <flux:heading>{{ $this->server->name }}</flux:heading>
         <div class="flex gap-2">
-            <flux:button variant="ghost" wire:click="testConnection" wire:loading.attr="disabled">Test Connection</flux:button>
-            <flux:button variant="ghost" href="{{ route('servers.edit', $this->server) }}" wire:navigate>Edit</flux:button>
+            <flux:button wire:click="testConnection" wire:loading.attr="disabled">Test Connection</flux:button>
+            <flux:button href="{{ route('servers.edit', $this->server) }}" wire:navigate>Edit</flux:button>
             <flux:button variant="danger" wire:click="delete" wire:confirm="Are you sure you want to delete this server?">Delete</flux:button>
         </div>
     </div>
 
     <div class="space-y-6">
         <div class="space-y-4">
-            <flux:callout variant="success" icon="check-circle">
-                This server has been provisioned.
-            </flux:callout>
+            <div>
+                <flux:heading>Server Status</flux:heading>
+                <flux:text class="mt-2">This server has been provisioned.</flux:text>
+            </div>
 
             @if($connectionStatus)
-                <flux:callout variant="{{ $connectionSuccess ? 'success' : 'warning' }}">
-                    {{ $connectionStatus }}
-                </flux:callout>
+                <div>
+                    <flux:heading>Connection Test</flux:heading>
+                    <flux:text class="mt-2">{{ $connectionStatus }}</flux:text>
+                </div>
             @endif
 
             <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <dt class="text-sm text-zinc-500">IP Address</dt>
-                    <dd class="font-mono">{{ $this->server->ip_address }}</dd>
+                    <dt>IP Address</dt>
+                    <dd>{{ $this->server->ip_address }}</dd>
                 </div>
                 <div>
-                    <dt class="text-sm text-zinc-500">RAM</dt>
+                    <dt>RAM</dt>
                     <dd>{{ number_format($this->server->ram_mb) }} MB</dd>
                 </div>
                 <div>
-                    <dt class="text-sm text-zinc-500">Sites User</dt>
+                    <dt>Sites User</dt>
                     <dd>{{ $this->server->sites_user }}</dd>
                 </div>
                 <div>
-                    <dt class="text-sm text-zinc-500">SSH Keys</dt>
+                    <dt>SSH Keys</dt>
                     <dd>{{ $this->server->authorizedKeysCount() }} configured</dd>
                 </div>
                 <div>
-                    <dt class="text-sm text-zinc-500">Provisioned</dt>
+                    <dt>Provisioned</dt>
                     <dd>{{ $this->server->provisioned_at->format('M j, Y g:i A') }}</dd>
                 </div>
             </dl>
@@ -166,12 +168,12 @@ new class extends Component
 
         <div class="space-y-4">
             <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold">Sites</h2>
-                <flux:button variant="primary" href="{{ route('servers.sites.create', $this->server) }}" wire:navigate>Add Site</flux:button>
+                <flux:heading>Sites</flux:heading>
+                <flux:button href="{{ route('servers.sites.create', $this->server) }}" wire:navigate>Add Site</flux:button>
             </div>
 
             @if($this->server->sites->isEmpty())
-                <p class="text-zinc-500">No sites configured yet.</p>
+                <p>No sites configured yet.</p>
             @else
                 <flux:table>
                     <flux:table.columns>
@@ -185,30 +187,30 @@ new class extends Component
                         @foreach($this->server->sites as $site)
                             <flux:table.row :key="$site->id">
                                 <flux:table.cell>
-                                    <span class="font-mono">{{ $site->hostname }}</span>
+                                    <span>{{ $site->hostname }}</span>
                                 </flux:table.cell>
                                 <flux:table.cell>{{ $site->php_version }}</flux:table.cell>
                                 <flux:table.cell>
-                                    <span class="font-mono text-sm">{{ $site->repository_branch }}</span>
+                                    <span>{{ $site->repository_branch }}</span>
                                 </flux:table.cell>
                                 <flux:table.cell>
                                     @if($site->status === 'active')
-                                        <span class="text-green-600">Active</span>
+                                        <span>Active</span>
                                     @elseif($site->status === 'ready')
-                                        <span class="text-blue-600">Ready to Deploy</span>
+                                        <span>Ready to Deploy</span>
                                     @elseif($site->status === 'deploying')
-                                        <span class="text-yellow-600">Deploying...</span>
+                                        <span>Deploying...</span>
                                     @elseif($site->status === 'configuring')
-                                        <span class="text-yellow-600">Configuring...</span>
+                                        <span>Configuring...</span>
                                     @elseif($site->status === 'failed')
-                                        <span class="text-red-600">Failed</span>
+                                        <span>Failed</span>
                                     @else
-                                        <span class="text-zinc-500">Pending</span>
+                                        <span>Pending</span>
                                     @endif
                                 </flux:table.cell>
                                 <flux:table.cell>
                                     <div class="flex gap-2">
-                                        <flux:button size="sm" variant="ghost" href="{{ route('servers.sites.settings', [$this->server, $site]) }}" wire:navigate>
+                                        <flux:button size="sm" href="{{ route('servers.sites.settings', [$this->server, $site]) }}" wire:navigate>
                                             Settings
                                         </flux:button>
                                         @if(in_array($site->status, ['ready', 'active']))
