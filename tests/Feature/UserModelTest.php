@@ -77,3 +77,15 @@ test('initials take first two parts from multi-part email', function () {
 
     expect($user->initials())->toBe('JD');
 });
+
+test('user can be created without password', function () {
+    $user = User::factory()->create(['password' => null]);
+
+    expect($user->password)->toBeNull();
+});
+
+test('user factory does not generate name attribute', function () {
+    $user = User::factory()->create();
+
+    expect(isset($user->name))->toBeFalse();
+});

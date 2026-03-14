@@ -161,7 +161,7 @@ test('pending server shows ssh setup command', function () {
     Livewire::actingAs($this->user)
         ->test('pages::servers.provision', ['server' => $server])
         ->assertSee('SSH Setup Command')
-        ->assertSee('Refresh')
+        ->assertSee('Run the Command')
         ->assertDontSee('Server Provisioned');
 });
 
@@ -383,5 +383,6 @@ test('provisioning with task shows View Live Output button', function () {
     Livewire::actingAs($this->user)
         ->test('pages::servers.provision', ['server' => $server])
         ->assertSee('Refresh')
-        ->assertSee('View Live Output');
+        ->assertSee('View Live Output')
+        ->assertDontSee('Run the Command');
 });

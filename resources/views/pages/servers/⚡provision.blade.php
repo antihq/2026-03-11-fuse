@@ -51,7 +51,7 @@ new class extends Component
     }
 };
 ?>
-<div class="max-w-lg">
+<div>
     <div class="flex justify-between mb-8">
         <flux:heading>Provision Server</flux:heading>
     </div>
@@ -81,12 +81,9 @@ new class extends Component
             </flux:text>
         </div>
 
-        <div class="mt-8 flex gap-2">
+        <div class="mt-8">
             <flux:button wire:click="retryProvision">
                 Retry Provisioning
-            </flux:button>
-            <flux:button href="{{ route('servers.index') }}" wire:navigate>
-                Back to Servers
             </flux:button>
         </div>
     @elseif($this->server->isProvisioning())
@@ -145,7 +142,7 @@ new class extends Component
             </flux:text>
         </div>
 
-        <div class="mt-8">
+        <div class="mt-8 max-w-lg">
             <div class="flex justify-between mb-2">
                 <flux:heading>SSH Setup Command</flux:heading>
                 <div x-data="{ copied: false }">
@@ -169,12 +166,9 @@ new class extends Component
             </flux:text>
         </div>
 
-        <div class="mt-8 flex gap-2">
+        <div class="mt-8">
             <flux:button wire:click="$refresh">
-                Refresh
-            </flux:button>
-            <flux:button href="{{ route('servers.index') }}" wire:navigate>
-                Back to Servers
+                I've Run the Command
             </flux:button>
         </div>
     @endif
