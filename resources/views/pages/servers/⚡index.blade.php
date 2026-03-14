@@ -33,7 +33,10 @@ new class extends Component
 <div>
     <div class="flex items-center justify-between mb-8">
         <flux:heading>Servers</flux:heading>
-        <flux:button href="{{ route('servers.create') }}" wire:navigate>Add Server</flux:button>
+        <div class="flex gap-2">
+            <flux:button icon="arrow-path" wire:click="$refresh" />
+            <flux:button href="{{ route('servers.create') }}" wire:navigate>Add Server</flux:button>
+        </div>
     </div>
 
     @if($this->servers->isEmpty())
@@ -43,6 +46,7 @@ new class extends Component
             <flux:table.columns>
                 <flux:table.column>Name</flux:table.column>
                 <flux:table.column>IP Address</flux:table.column>
+                <flux:table.column>Status</flux:table.column>
 
                 <flux:table.column align="end"></flux:table.column>
             </flux:table.columns>
@@ -57,9 +61,18 @@ new class extends Component
                             @endif
                         </flux:table.cell>
                         <flux:table.cell class="text-xs font-mono">{{ $server->ip_address }}</flux:table.cell>
+                        <flux:table.cell>
+                            @if($server->isProvisioned())
+                                <flux:badge size="sm" color="green">Provisioned</flux:badge>
+                            @elseif($server->isProvisioning())
+                                <flux:badge size="sm" color="blue">Provisioning</flux:badge>
+                            @else
+                                <flux:badge size="sm" color="yellow">Pending</flux:badge>
+                            @endif
+                        </flux:table.cell>
                         <flux:table.cell align="end">
                             <flux:dropdown>
-                                <flux:button size="sm" icon="ellipsis-horizontal" variant="ghost" />
+                                <flux:button size="sm" icon="ellipsis-horizontal" variant="ghost" inset="top bottom" />
                                 <flux:menu>
                                     @if($server->provisioned_at)
                                         <flux:menu.item href="{{ route('servers.show', $server) }}" wire:navigate>View</flux:menu.item>
