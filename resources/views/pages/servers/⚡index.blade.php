@@ -30,7 +30,7 @@ new class extends Component
     }
 };
 ?>
-<div class="max-w-lg">
+<div>
     <div class="flex items-center justify-between mb-8">
         <flux:heading>Servers</flux:heading>
         <flux:button href="{{ route('servers.create') }}" wire:navigate>Add Server</flux:button>
