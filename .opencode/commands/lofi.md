@@ -1,6 +1,5 @@
 ---
 description: Simplify blade template to low-fidelity prototype
-agent: build
 ---
 
 Simplify as `$ARGUMENTS` to a low-fidelity prototype for wireframing.
