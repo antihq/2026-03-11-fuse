@@ -80,6 +80,22 @@ test('handle reloads supervisor and starts queue workers', function () {
         ->toContain('supervisorctl start site-'.$this->site->id.':*');
 });
 
+test('handle creates log files before starting supervisor', function () {
+    Process::fake([
+        '*' => Process::result(exitCode: 0),
+    ]);
+
+    $job = new InstallSiteQueue($this->site->id);
+    $job->handle();
+
+    $tasks = Task::where('server_id', $this->server->id)->get();
+    $reloadTask = $tasks->sortBy('id')->last();
+
+    expect($reloadTask->script)
+        ->toContain('touch /home/deploy/example.com/storage/logs/queue.log /home/deploy/example.com/storage/logs/queue-error.log')
+        ->toContain('chown deploy:deploy /home/deploy/example.com/storage/logs/queue.log /home/deploy/example.com/storage/logs/queue-error.log');
+});
+
 test('handle returns early when user has no ssh key', function () {
     $user = User::factory()->create();
     $server = Server::create([
@@ -143,4 +159,17 @@ test('supervisor config contains correct paths', function () {
         ->toContain('stdout_logfile=/home/deploy/example.com/storage/logs/queue.log')
         ->toContain('stderr_logfile=/home/deploy/example.com/storage/logs/queue-error.log')
         ->toContain('user=deploy');
+});
+
+test('supervisor config uses heredoc syntax', function () {
+    $config = view('scripts.site-queue-supervisor', [
+        'site' => $this->site,
+        'sitesUser' => 'deploy',
+        'repoPath' => '/home/deploy/example.com/repository',
+        'logPath' => '/home/deploy/example.com/storage/logs',
+    ])->render();
+
+    expect($config)
+        ->toContain("cat > /etc/supervisor/conf.d/site-{$this->site->id}.conf << 'EOF'")
+        ->toContain('EOF');
 });

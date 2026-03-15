@@ -29,7 +29,8 @@ cd "$REPO_DIR"
 if [ -d "$REPO_DIR/.git" ]; then
     echo "Updating existing repository..."
     cd "$REPO_DIR"
-    git pull origin $REPOSITORY_BRANCH
+    git fetch origin
+    git reset --hard origin/$REPOSITORY_BRANCH
 else
     echo "Cloning repository..."
     rm -rf "$REPO_DIR"

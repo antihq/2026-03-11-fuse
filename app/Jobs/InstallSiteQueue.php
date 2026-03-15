@@ -61,6 +61,8 @@ class InstallSiteQueue implements ShouldQueue
                     'mkdir -p '.$logPath,
                     'chown '.$server->sites_user.':'.$server->sites_user.' '.$logPath,
                     'chmod 775 '.$logPath,
+                    'touch '.$logPath.'/queue.log '.$logPath.'/queue-error.log',
+                    'chown '.$server->sites_user.':'.$server->sites_user.' '.$logPath.'/queue.log '.$logPath.'/queue-error.log',
                     'supervisorctl reread',
                     'supervisorctl update',
                     'supervisorctl start site-'.$site->id.':*',

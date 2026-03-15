@@ -104,11 +104,11 @@ test('deploy script contains expected content', function () {
     expect($script)
         ->toContain('SITES_USER="deploy"')
         ->toContain('HOSTNAME="example.com"')
-        ->toContain('REPOSITORY_URL="git@github.com:user/repo.git')
+        ->toContain('REPOSITORY_URL="git@github.com:user/repo.git"')
         ->toContain('REPOSITORY_BRANCH="main"')
         ->toContain('PHP_VERSION="8.4"')
         ->toContain('git clone')
-        ->toContain('git pull origin')
+        ->toContain('git fetch origin')
         ->toContain('Setting permissions');
 });
 
@@ -124,7 +124,7 @@ test('deploy script creates repository directory', function () {
     expect($script)->toContain('REPO_DIR="$SITE_DIR/repository"');
 });
 
-test('deploy script uses git pull for existing repository', function () {
+test('deploy script uses git fetch and reset for existing repository', function () {
     $script = view('scripts.deploy-site', [
         'hostname' => 'example.com',
         'sitesUser' => 'deploy',
@@ -134,8 +134,9 @@ test('deploy script uses git pull for existing repository', function () {
     ])->render();
 
     expect($script)
-        ->toContain('git pull origin $REPOSITORY_BRANCH')
-        ->not->toContain('git reset --hard');
+        ->toContain('git fetch origin')
+        ->toContain('git reset --hard origin/$REPOSITORY_BRANCH')
+        ->not->toContain('git pull origin $REPOSITORY_BRANCH');
 });
 
 test('deploy script includes before hook when provided', function () {
