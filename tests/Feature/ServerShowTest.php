@@ -736,3 +736,42 @@ test('show page hides deploy key section when server has no key', function () {
         ->assertDontSee('Deploy Key')
         ->assertDontSee('Add this public key');
 });
+
+test('server credentials section is displayed on show page', function () {
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 2048,
+        'sites_user' => 'fuse',
+        'provisioned_at' => now(),
+        'deploy_user_password' => 'deploy-pass-123',
+        'mysql_root_password' => 'mysql-pass-456',
+    ]);
+
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->assertSee('Server Credentials')
+        ->assertSee('Deploy User Password')
+        ->assertSee('MySQL Root Password')
+        ->assertSee('deploy-pass-123')
+        ->assertSee('mysql-pass-456');
+});
+
+test('server credentials show not configured when not set', function () {
+    $server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 2048,
+        'sites_user' => 'fuse',
+        'provisioned_at' => now(),
+    ]);
+
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::servers.show', ['server' => $server->id])
+        ->assertSee('Server Credentials')
+        ->assertSee('Not configured');
+});

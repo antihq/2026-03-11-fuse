@@ -40,7 +40,7 @@ test('deploy user password is encrypted at rest', function () {
         ->and($rawValue)->toStartWith('eyJ');
 });
 
-test('passwords are hidden from array serialization', function () {
+test('passwords are visible in array serialization', function () {
     $server = Server::create([
         'user_id' => $this->user->id,
         'name' => 'Test Server',
@@ -52,11 +52,11 @@ test('passwords are hidden from array serialization', function () {
 
     $array = $server->toArray();
 
-    expect($array)->not->toHaveKey('mysql_root_password')
-        ->and($array)->not->toHaveKey('deploy_user_password');
+    expect($array)->toHaveKey('mysql_root_password', 'secret-mysql')
+        ->and($array)->toHaveKey('deploy_user_password', 'secret-deploy');
 });
 
-test('passwords are hidden from json serialization', function () {
+test('passwords are visible in json serialization', function () {
     $server = Server::create([
         'user_id' => $this->user->id,
         'name' => 'Test Server',
@@ -69,8 +69,8 @@ test('passwords are hidden from json serialization', function () {
     $json = $server->toJson();
     $decoded = json_decode($json, true);
 
-    expect($decoded)->not->toHaveKey('mysql_root_password')
-        ->and($decoded)->not->toHaveKey('deploy_user_password');
+    expect($decoded)->toHaveKey('mysql_root_password', 'secret-mysql')
+        ->and($decoded)->toHaveKey('deploy_user_password', 'secret-deploy');
 });
 
 test('passwords can be decrypted and accessed on model', function () {

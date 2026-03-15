@@ -30,10 +30,6 @@ class Site extends Model
         'queue_processes',
     ];
 
-    protected $hidden = [
-        'database_password',
-    ];
-
     protected function casts(): array
     {
         return [

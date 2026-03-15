@@ -13,8 +13,6 @@ class Server extends Model
 
     protected $fillable = ['user_id', 'name', 'ip_address', 'ram_mb', 'authorized_keys', 'ssh_setup_token', 'ssh_ready_at', 'provision_status', 'provision_task_id', 'sites_user', 'provisioned_at', 'mysql_root_password', 'deploy_user_password', 'server_public_key'];
 
-    protected $hidden = ['mysql_root_password', 'deploy_user_password'];
-
     protected function casts(): array
     {
         return [

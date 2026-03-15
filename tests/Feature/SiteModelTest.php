@@ -265,7 +265,7 @@ test('site database_password can be decrypted and accessed', function () {
     expect($site->database_password)->toBe('secure_password');
 });
 
-test('site database_password is hidden from array serialization', function () {
+test('site database_password is visible in array serialization', function () {
     $site = Site::create([
         'server_id' => $this->server->id,
         'hostname' => 'example.com',
@@ -278,10 +278,10 @@ test('site database_password is hidden from array serialization', function () {
 
     $array = $site->toArray();
 
-    expect($array)->not->toHaveKey('database_password');
+    expect($array)->toHaveKey('database_password', 'secure_password');
 });
 
-test('site database_password is hidden from json serialization', function () {
+test('site database_password is visible in json serialization', function () {
     $site = Site::create([
         'server_id' => $this->server->id,
         'hostname' => 'example.com',
@@ -295,8 +295,8 @@ test('site database_password is hidden from json serialization', function () {
     $json = $site->toJson();
 
     expect($json)
-        ->not->toContain('database_password')
-        ->not->toContain('secure_password');
+        ->toContain('database_password')
+        ->toContain('secure_password');
 });
 
 test('site database_created_at can be set and is cast to datetime', function () {

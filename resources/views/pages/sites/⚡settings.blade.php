@@ -225,6 +225,69 @@ new class extends Component
     </div>
 
     <div class="max-w-4xl mt-16">
+        <flux:heading class="mb-2">Database Credentials</flux:heading>
+        <flux:text class="mb-4">MySQL database credentials for this site</flux:text>
+
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-4">
+            <div x-data="{ showPassword: false }" class="space-y-4">
+                <div class="flex items-center gap-2">
+                    <flux:text class="font-semibold">Database Name:</flux:text>
+                    <flux:text>{{ $this->site->database_name ?? 'Not configured' }}</flux:text>
+                    @if($this->site->database_name)
+                        <div x-data="{ copied: false }">
+                            <flux:button
+                                size="sm"
+                                x-on:click="navigator.clipboard.writeText('{{ $this->site->database_name }}'); copied = true; setTimeout(() => copied = false, 2000)"
+                            >
+                                <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                            </flux:button>
+                        </div>
+                    @endif
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <flux:text class="font-semibold">Database Username:</flux:text>
+                    <flux:text>{{ $this->site->database_user ?? 'Not configured' }}</flux:text>
+                    @if($this->site->database_user)
+                        <div x-data="{ copied: false }">
+                            <flux:button
+                                size="sm"
+                                x-on:click="navigator.clipboard.writeText('{{ $this->site->database_user }}'); copied = true; setTimeout(() => copied = false, 2000)"
+                            >
+                                <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                            </flux:button>
+                        </div>
+                    @endif
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <flux:text class="font-semibold">Database Password:</flux:text>
+                    <flux:text x-text="showPassword ? '{{ $this->site->database_password ?? 'Not configured' }}' : '••••••••'"></flux:text>
+                    @if($this->site->database_password)
+                        <button @click="showPassword = !showPassword" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                            <span x-text="showPassword ? 'Hide' : 'Show'"></span>
+                        </button>
+                        <div x-data="{ copied: false }">
+                            <flux:button
+                                size="sm"
+                                x-on:click="navigator.clipboard.writeText('{{ $this->site->database_password }}'); copied = true; setTimeout(() => copied = false, 2000)"
+                            >
+                                <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                            </flux:button>
+                        </div>
+                    @endif
+                </div>
+
+                @if($this->site->database_created_at)
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                        Database created at: {{ $this->site->database_created_at->format('Y-m-d H:i:s') }}
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mt-16">
         <flux:heading class="mb-2">Environment File</flux:heading>
         <flux:text class="mb-4">Edit the .env file for this site</flux:text>
 

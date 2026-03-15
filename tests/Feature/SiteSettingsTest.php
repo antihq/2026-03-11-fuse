@@ -5,6 +5,7 @@ use App\Jobs\UninstallSiteQueue;
 use App\Models\Server;
 use App\Models\Site;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
@@ -259,4 +260,47 @@ test('queue_processes validation allows values between 1 and 10', function () {
         ->set('queue_processes', '11')
         ->call('save')
         ->assertHasErrors(['queue_processes' => 'max']);
+});
+
+test('database credentials section is displayed on settings page', function () {
+    $this->site->update([
+        'database_name' => 'test_db',
+        'database_user' => 'test_user',
+        'database_password' => 'test_password',
+        'database_created_at' => now(),
+    ]);
+
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+        ->assertSee('Database Credentials')
+        ->assertSee('Database Name')
+        ->assertSee('Database Username')
+        ->assertSee('Database Password')
+        ->assertSee('test_db')
+        ->assertSee('test_user')
+        ->assertSee('test_password');
+});
+
+test('database credentials show not configured when not set', function () {
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+        ->assertSee('Database Credentials')
+        ->assertSee('Not configured');
+});
+
+test('database credentials show creation timestamp when set', function () {
+    $this->site->update([
+        'database_name' => 'test_db',
+        'database_user' => 'test_user',
+        'database_password' => 'test_password',
+        'database_created_at' => Carbon::parse('2024-01-15 10:30:00'),
+    ]);
+
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+        ->assertSee('Database created at:')
+        ->assertSee('2024-01-15 10:30:00');
 });

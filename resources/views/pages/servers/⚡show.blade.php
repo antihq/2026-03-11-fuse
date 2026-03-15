@@ -191,6 +191,45 @@ new class extends Component
             </div>
         @endif
 
+        <div class="mt-6 max-w-4xl">
+            <flux:heading>Server Credentials</flux:heading>
+            <flux:text class="mt-2">Root passwords for this server</flux:text>
+
+            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-4 mt-2">
+                <div x-data="{ showPassword: false }" class="space-y-4">
+                    <div class="flex items-center gap-2">
+                        <flux:text class="font-semibold">Deploy User Password:</flux:text>
+                        <flux:text x-text="showPassword ? '{{ $this->server->deploy_user_password ?? 'Not configured' }}' : '•••••••••'"></flux:text>
+                        @if($this->server->deploy_user_password)
+                            <button @click="showPassword = !showPassword" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                                <span x-text="showPassword ? 'Hide' : 'Show'"></span>
+                            </button>
+                            <div x-data="{ copied: false }">
+                                <flux:button size="sm" x-on:click="navigator.clipboard.writeText('{{ $this->server->deploy_user_password }}'); copied = true; setTimeout(() => copied = false, 2000)">
+                                    <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                                </flux:button>
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <flux:text class="font-semibold">MySQL Root Password:</flux:text>
+                        <flux:text x-text="showPassword ? '{{ $this->server->mysql_root_password ?? 'Not configured' }}' : '•••••••••'"></flux:text>
+                        @if($this->server->mysql_root_password)
+                            <button @click="showPassword = !showPassword" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                                <span x-text="showPassword ? 'Hide' : 'Show'"></span>
+                            </button>
+                            <div x-data="{ copied: false }">
+                                <flux:button size="sm" x-on:click="navigator.clipboard.writeText('{{ $this->server->mysql_root_password }}'); copied = true; setTimeout(() => copied = false, 2000)">
+                                    <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                                </flux:button>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="space-y-4">
             <div class="flex items-center justify-between">
                 <flux:heading>Sites</flux:heading>
