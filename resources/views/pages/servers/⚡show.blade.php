@@ -82,7 +82,7 @@ new class extends Component
     {
         $site = $this->server->sites()->findOrFail($siteId);
 
-        if (! in_array($site->status, ['ready', 'active'])) {
+        if (! in_array($site->status, ['ready', 'active', 'failed'])) {
             return;
         }
 
@@ -293,7 +293,7 @@ new class extends Component
                                                 Caddyfile
                                             </flux:menu.item>
 
-                                            @if(in_array($site->status, ['ready', 'active']))
+                                            @if(in_array($site->status, ['ready', 'active', 'failed']))
                                                 <flux:menu.item
                                                     wire:click="deploy({{ $site->id }})"
                                                     wire:confirm="Deploy {{ $site->hostname }}?"
