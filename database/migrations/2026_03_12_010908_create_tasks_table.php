@@ -27,9 +27,4 @@ return new class extends Migration
             $table->index('server_id');
         });
     }
-
-    public function down(): void
-    {
-        Schema::dropIfExists('tasks');
-    }
 };

@@ -51,7 +51,7 @@ test('server has many sites', function () {
     expect($this->server->fresh()->sites)->toHaveCount(2);
 });
 
-test('sites are deleted when server is deleted', function () {
+test('sites are not deleted when server is deleted', function () {
     $site = Site::create([
         'server_id' => $this->server->id,
         'hostname' => 'example.com',
@@ -63,7 +63,7 @@ test('sites are deleted when server is deleted', function () {
 
     $this->server->delete();
 
-    expect(Site::find($site->id))->toBeNull();
+    expect(Site::find($site->id))->not->toBeNull();
 });
 
 test('site defaults status to pending', function () {

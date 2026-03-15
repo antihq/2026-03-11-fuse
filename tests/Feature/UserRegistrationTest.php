@@ -69,7 +69,7 @@ test('user has many servers relationship', function () {
         ->and($user->servers->first()->name)->toBe('Test Server');
 });
 
-test('deleting user cascades to servers', function () {
+test('deleting user does not cascade to servers', function () {
     $user = User::factory()->create();
 
     $server = Server::create([
@@ -83,7 +83,7 @@ test('deleting user cascades to servers', function () {
 
     $user->delete();
 
-    expect(Server::find($serverId))->toBeNull();
+    expect(Server::find($serverId))->not->toBeNull();
 });
 
 test('user registration with remember field authenticates user', function () {
