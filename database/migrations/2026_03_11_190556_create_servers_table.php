@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('servers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id');
             $table->string('name');
             $table->string('ip_address');
             $table->unsignedInteger('ram_mb');
@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('ssh_setup_token')->nullable()->unique();
             $table->timestamp('ssh_ready_at')->nullable();
             $table->enum('provision_status', ['pending', 'ssh_setup', 'provisioning', 'provisioned', 'failed'])->default('pending');
-            $table->foreignId('provision_task_id')->nullable()->constrained('tasks')->nullOnDelete();
+            $table->foreignId('provision_task_id')->nullable();
             $table->timestamp('provisioned_at')->nullable();
             $table->string('sites_user')->default('deploy');
             $table->text('mysql_root_password')->nullable();

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('sites', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('server_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('server_id');
             $table->string('hostname');
             $table->string('php_version')->default('8.4');
             $table->string('size')->default('large');
