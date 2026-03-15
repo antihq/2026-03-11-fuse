@@ -25,6 +25,9 @@ return new class extends Migration
             $table->text('deploy_user_password')->nullable();
             $table->text('server_public_key')->nullable();
             $table->timestamps();
+
+            $table->index('user_id');
+            $table->index('provision_task_id');
         });
     }
 };
