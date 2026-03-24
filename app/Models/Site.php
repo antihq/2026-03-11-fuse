@@ -28,6 +28,7 @@ class Site extends Model
         'database_created_at',
         'queue_enabled',
         'queue_processes',
+        'nightwatch_enabled',
     ];
 
     protected function casts(): array
@@ -40,6 +41,7 @@ class Site extends Model
             'database_created_at' => 'datetime',
             'queue_enabled' => 'boolean',
             'queue_processes' => 'integer',
+            'nightwatch_enabled' => 'boolean',
         ];
     }
 
@@ -64,6 +66,16 @@ class Site extends Model
     }
 
     public function queueLogPath(): string
+    {
+        return "/home/{$this->server->sites_user}/{$this->hostname}/storage/logs";
+    }
+
+    public function nightwatchSupervisorConfigPath(): string
+    {
+        return "/etc/supervisor/conf.d/site-{$this->id}-nightwatch.conf";
+    }
+
+    public function nightwatchLogPath(): string
     {
         return "/home/{$this->server->sites_user}/{$this->hostname}/storage/logs";
     }

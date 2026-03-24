@@ -1,6 +1,8 @@
 <?php
 
+use App\Jobs\InstallSiteNightwatch;
 use App\Jobs\InstallSiteQueue;
+use App\Jobs\UninstallSiteNightwatch;
 use App\Jobs\UninstallSiteQueue;
 use App\Models\Server;
 use App\Models\Site;
@@ -303,4 +305,40 @@ test('database credentials show creation timestamp when set', function () {
     Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
         ->assertSee('Database created at:')
         ->assertSee('2024-01-15 10:30:00');
+});
+
+test('nightwatch section is displayed on settings page', function () {
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+        ->assertSee('Nightwatch Agent');
+});
+
+test('enableNightwatch dispatches InstallSiteNightwatch job', function () {
+    Queue::fake();
+
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+        ->call('enableNightwatch')
+        ->assertRedirect(route('servers.sites.settings', [$this->server, $this->site]));
+
+    Queue::assertPushed(InstallSiteNightwatch::class);
+
+    expect($this->site->fresh()->nightwatch_enabled)->toBeTrue();
+});
+
+test('disableNightwatch dispatches UninstallSiteNightwatch job', function () {
+    $this->site->update(['nightwatch_enabled' => true]);
+    Queue::fake();
+
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+        ->call('disableNightwatch')
+        ->assertRedirect(route('servers.sites.settings', [$this->server, $this->site]));
+
+    Queue::assertPushed(UninstallSiteNightwatch::class);
+
+    expect($this->site->fresh()->nightwatch_enabled)->toBeFalse();
 });

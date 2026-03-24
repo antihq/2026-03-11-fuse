@@ -1,0 +1,196 @@
+<?php
+
+use App\Jobs\InstallSiteNightwatch;
+use App\Models\Server;
+use App\Models\Site;
+use App\Models\Task;
+use App\Models\User;
+use Illuminate\Support\Facades\Process;
+
+beforeEach(function () {
+    $this->user = User::factory()->withSshKeys()->create();
+    $this->server = Server::create([
+        'user_id' => $this->user->id,
+        'name' => 'Test Server',
+        'ip_address' => '192.168.1.1',
+        'ram_mb' => 2048,
+        'sites_user' => 'deploy',
+        'provisioned_at' => now(),
+    ]);
+    $this->site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'nightwatch_enabled' => true,
+        'status' => 'ready',
+    ]);
+});
+
+test('handle creates task and installs nightwatch supervisor config', function () {
+    Process::fake([
+        '*' => Process::result(exitCode: 0),
+    ]);
+
+    $job = new InstallSiteNightwatch($this->site->id);
+    $job->handle();
+
+    $tasks = Task::where('server_id', $this->server->id)->get();
+
+    expect($tasks)->toHaveCount(2);
+    expect($tasks[0])
+        ->user_id->toBe($this->user->id)
+        ->ssh_user->toBe('root');
+});
+
+test('handle creates log directory with correct permissions', function () {
+    Process::fake([
+        '*' => Process::result(exitCode: 0),
+    ]);
+
+    $job = new InstallSiteNightwatch($this->site->id);
+    $job->handle();
+
+    $tasks = Task::where('server_id', $this->server->id)->get();
+    $reloadTask = $tasks->first(fn ($t) => str_contains($t->script, 'mkdir -p'));
+
+    expect($reloadTask->script)
+        ->toContain('mkdir -p /home/deploy/example.com/storage/logs')
+        ->toContain('chown deploy:deploy /home/deploy/example.com/storage/logs')
+        ->toContain('chmod 775 /home/deploy/example.com/storage/logs');
+});
+
+test('handle reloads supervisor and starts nightwatch agent', function () {
+    Process::fake([
+        '*' => Process::result(exitCode: 0),
+    ]);
+
+    $job = new InstallSiteNightwatch($this->site->id);
+    $job->handle();
+
+    $tasks = Task::where('server_id', $this->server->id)->get();
+    $reloadTask = $tasks->sortBy('id')->last();
+
+    expect($reloadTask->script)
+        ->toContain('supervisorctl reread')
+        ->toContain('supervisorctl update')
+        ->toContain('supervisorctl start site-'.$this->site->id.'-nightwatch:*');
+});
+
+test('handle creates log files before starting supervisor', function () {
+    Process::fake([
+        '*' => Process::result(exitCode: 0),
+    ]);
+
+    $job = new InstallSiteNightwatch($this->site->id);
+    $job->handle();
+
+    $tasks = Task::where('server_id', $this->server->id)->get();
+    $reloadTask = $tasks->sortBy('id')->last();
+
+    expect($reloadTask->script)
+        ->toContain('touch /home/deploy/example.com/storage/logs/nightwatch.log /home/deploy/example.com/storage/logs/nightwatch-error.log')
+        ->toContain('chown deploy:deploy /home/deploy/example.com/storage/logs/nightwatch.log /home/deploy/example.com/storage/logs/nightwatch-error.log');
+});
+
+test('handle returns early when user has no ssh key', function () {
+    $user = User::factory()->create();
+    $server = Server::create([
+        'user_id' => $user->id,
+        'name' => 'No Key Server',
+        'ip_address' => '10.0.0.1',
+        'ram_mb' => 1024,
+        'sites_user' => 'deploy',
+        'provisioned_at' => now(),
+    ]);
+    $site = Site::create([
+        'server_id' => $server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'nightwatch_enabled' => true,
+        'status' => 'ready',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+    ]);
+
+    $job = new InstallSiteNightwatch($site->id);
+    $job->handle();
+
+    expect(Task::where('server_id', $server->id)->count())->toBe(0);
+});
+
+test('failed method sets nightwatch_enabled to false', function () {
+    $this->site->update(['nightwatch_enabled' => true]);
+
+    $job = new InstallSiteNightwatch($this->site->id);
+    $job->failed(new Exception('Test failure'));
+
+    expect($this->site->fresh()->nightwatch_enabled)->toBeFalse();
+});
+
+test('supervisor config contains correct php version', function () {
+    $config = view('scripts.site-nightwatch-supervisor', [
+        'site' => $this->site,
+        'sitesUser' => 'deploy',
+        'repoPath' => '/home/deploy/example.com/repository',
+        'logPath' => '/home/deploy/example.com/storage/logs',
+    ])->render();
+
+    expect($config)
+        ->toContain('php8.4 /home/deploy/example.com/repository/artisan nightwatch:agent')
+        ->toContain('numprocs=1');
+});
+
+test('supervisor config contains correct paths', function () {
+    $config = view('scripts.site-nightwatch-supervisor', [
+        'site' => $this->site,
+        'sitesUser' => 'deploy',
+        'repoPath' => '/home/deploy/example.com/repository',
+        'logPath' => '/home/deploy/example.com/storage/logs',
+    ])->render();
+
+    expect($config)
+        ->toContain('program:site-'.$this->site->id.'-nightwatch')
+        ->toContain('directory=/home/deploy/example.com/repository')
+        ->toContain('stdout_logfile=/home/deploy/example.com/storage/logs/nightwatch.log')
+        ->toContain('stderr_logfile=/home/deploy/example.com/storage/logs/nightwatch-error.log')
+        ->toContain('user=deploy');
+});
+
+test('supervisor config uses heredoc syntax', function () {
+    $config = view('scripts.site-nightwatch-supervisor', [
+        'site' => $this->site,
+        'sitesUser' => 'deploy',
+        'repoPath' => '/home/deploy/example.com/repository',
+        'logPath' => '/home/deploy/example.com/storage/logs',
+    ])->render();
+
+    expect($config)
+        ->toContain("cat > /etc/supervisor/conf.d/site-{$this->site->id}-nightwatch.conf << 'EOF'")
+        ->toContain('EOF');
+});
+
+test('supervisor config runs nightwatch:agent command', function () {
+    $config = view('scripts.site-nightwatch-supervisor', [
+        'site' => $this->site,
+        'sitesUser' => 'deploy',
+        'repoPath' => '/home/deploy/example.com/repository',
+        'logPath' => '/home/deploy/example.com/storage/logs',
+    ])->render();
+
+    expect($config)
+        ->toContain('artisan nightwatch:agent');
+});
+
+test('supervisor config uses numprocs=1', function () {
+    $config = view('scripts.site-nightwatch-supervisor', [
+        'site' => $this->site,
+        'sitesUser' => 'deploy',
+        'repoPath' => '/home/deploy/example.com/repository',
+        'logPath' => '/home/deploy/example.com/storage/logs',
+    ])->render();
+
+    expect($config)->toContain('numprocs=1');
+});

@@ -1,7 +1,9 @@
 <?php
 
 use App\Helpers\RemoteFile;
+use App\Jobs\InstallSiteNightwatch;
 use App\Jobs\InstallSiteQueue;
+use App\Jobs\UninstallSiteNightwatch;
 use App\Jobs\UninstallSiteQueue;
 use App\Models\Server;
 use App\Models\Site;
@@ -103,6 +105,30 @@ new class extends Component
         dispatch(new UninstallSiteQueue($site->id));
 
         session()->flash('queueStatus', 'Queue workers disabled successfully.');
+        $this->redirect(route('servers.sites.settings', [$this->server, $this->site]), navigate: true);
+    }
+
+    public function enableNightwatch(): void
+    {
+        $site = $this->site();
+
+        $site->update(['nightwatch_enabled' => true]);
+
+        dispatch(new InstallSiteNightwatch($site->id));
+
+        session()->flash('nightwatchStatus', 'Nightwatch agent enabled successfully.');
+        $this->redirect(route('servers.sites.settings', [$this->server, $this->site]), navigate: true);
+    }
+
+    public function disableNightwatch(): void
+    {
+        $site = $this->site();
+
+        $site->update(['nightwatch_enabled' => false]);
+
+        dispatch(new UninstallSiteNightwatch($site->id));
+
+        session()->flash('nightwatchStatus', 'Nightwatch agent disabled successfully.');
         $this->redirect(route('servers.sites.settings', [$this->server, $this->site]), navigate: true);
     }
 
@@ -222,6 +248,27 @@ new class extends Component
         <p class="text-sm mt-1">
             Number of queue worker processes to run (1-10). Requires restarting queues to take effect.
         </p>
+    </div>
+
+    <div class="max-w-lg mt-16 space-y-8">
+        <flux:heading class="mb-2">Nightwatch Agent</flux:heading>
+        <flux:text class="mb-4">Manage Laravel Nightwatch agent for this site using Supervisor</flux:text>
+
+        @if(session('nightwatchStatus'))
+            <flux:text color="green" class="mb-4">{{ session('nightwatchStatus') }}</flux:text>
+        @endif
+
+        @if($this->site->nightwatch_enabled)
+            <div class="flex items-center gap-4">
+                <flux:text color="green">Nightwatch agent is enabled</flux:text>
+                <flux:button wire:click="disableNightwatch" variant="danger">Disable Nightwatch</flux:button>
+            </div>
+        @else
+            <div class="flex items-center gap-4">
+                <flux:text>Nightwatch agent is disabled</flux:text>
+                <flux:button wire:click="enableNightwatch">Enable Nightwatch</flux:button>
+            </div>
+        @endif
     </div>
 
     <div class="max-w-4xl mt-16">

@@ -395,3 +395,46 @@ test('queue_processes can be set and is cast to integer', function () {
     expect($site->queue_processes)->toBe(5);
     expect($site->queue_processes)->toBeInt();
 });
+
+test('nightwatch_enabled can be set and is cast to boolean', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'nightwatch_enabled' => true,
+    ]);
+
+    expect($site->nightwatch_enabled)->toBeTrue();
+    expect($site->nightwatch_enabled)->toBeBool();
+});
+
+test('nightwatchSupervisorConfigPath returns correct path', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+    ]);
+
+    expect($site->nightwatchSupervisorConfigPath())->toBe('/etc/supervisor/conf.d/site-'.$site->id.'-nightwatch.conf');
+});
+
+test('nightwatchLogPath returns correct path', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+    ]);
+
+    $expectedPath = "/home/{$this->server->sites_user}/{$site->hostname}/storage/logs";
+
+    expect($site->nightwatchLogPath())->toBe($expectedPath);
+});
