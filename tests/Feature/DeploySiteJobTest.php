@@ -243,9 +243,9 @@ test('deploy script includes database credentials when site has them', function 
     ])->render();
 
     expect($script)
-        ->toContain('export DB_DATABASE="withdb_com"')
-        ->toContain('export DB_USERNAME="withdb_com"')
-        ->toContain('export DB_PASSWORD="db_password"');
+        ->toContain('DB_DATABASE="withdb_com"')
+        ->toContain('DB_USERNAME="withdb_com"')
+        ->toContain('DB_PASSWORD="db_password"');
 });
 
 test('deploy script does not include database credentials when site does not have them', function () {
@@ -258,9 +258,9 @@ test('deploy script does not include database credentials when site does not hav
     ])->render();
 
     expect($script)
-        ->not->toContain('export DB_DATABASE=')
-        ->not->toContain('export DB_USERNAME=')
-        ->not->toContain('export DB_PASSWORD=');
+        ->not->toContain('DB_DATABASE=')
+        ->not->toContain('DB_USERNAME=')
+        ->not->toContain('DB_PASSWORD=');
 });
 
 test('handle dispatches InstallSiteQueue when queue_enabled is true', function () {
