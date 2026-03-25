@@ -29,6 +29,7 @@ class Site extends Model
         'queue_enabled',
         'queue_processes',
         'nightwatch_enabled',
+        'scheduler_enabled',
     ];
 
     protected function casts(): array
@@ -42,6 +43,7 @@ class Site extends Model
             'queue_enabled' => 'boolean',
             'queue_processes' => 'integer',
             'nightwatch_enabled' => 'boolean',
+            'scheduler_enabled' => 'boolean',
         ];
     }
 
@@ -78,6 +80,11 @@ class Site extends Model
     public function nightwatchLogPath(): string
     {
         return "/home/{$this->server->sites_user}/{$this->hostname}/storage/logs";
+    }
+
+    public function schedulerCronPath(): string
+    {
+        return "/etc/cron.d/site-{$this->id}-scheduler";
     }
 
     public static function defaultAfterHook(string $phpVersion): string

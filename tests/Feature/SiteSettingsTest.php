@@ -2,8 +2,10 @@
 
 use App\Jobs\InstallSiteNightwatch;
 use App\Jobs\InstallSiteQueue;
+use App\Jobs\InstallSiteScheduler;
 use App\Jobs\UninstallSiteNightwatch;
 use App\Jobs\UninstallSiteQueue;
+use App\Jobs\UninstallSiteScheduler;
 use App\Models\Server;
 use App\Models\Site;
 use App\Models\User;
@@ -35,8 +37,9 @@ beforeEach(function () {
 });
 
 test('guests cannot access site settings page', function () {
-    $this->get(route('servers.sites.settings', [$this->server, $this->site]))
-        ->assertRedirect(route('login'));
+    $this->get(
+        route('servers.sites.settings', [$this->server, $this->site]),
+    )->assertRedirect(route('login'));
 });
 
 test('user cannot access settings for another users site', function () {
@@ -61,14 +64,19 @@ test('user cannot access settings for another users site', function () {
 
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $anotherServer->id, 'site' => $anotherSite->id])
-        ->assertForbidden();
+    Livewire::test('pages::sites.settings', [
+        'server' => $anotherServer->id,
+        'site' => $anotherSite->id,
+    ])->assertForbidden();
 });
 
 test('settings page is displayed', function () {
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->assertSee($this->site->hostname)
         ->assertSee('Hook: Before Updating Repository')
         ->assertSee('Hook: After Updating Repository');
@@ -77,11 +85,16 @@ test('settings page is displayed', function () {
 test('hooks can be updated', function () {
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->set('hook_before_updating_repository', 'echo "before"')
         ->set('hook_after_updating_repository', 'echo "after"')
         ->call('save')
-        ->assertRedirect(route('servers.sites.settings', [$this->server, $this->site]));
+        ->assertRedirect(
+            route('servers.sites.settings', [$this->server, $this->site]),
+        );
 
     expect($this->site->fresh())
         ->hook_before_updating_repository->toBe('echo "before"')
@@ -90,11 +103,16 @@ test('hooks can be updated', function () {
 test('empty hooks can be saved', function () {
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->set('hook_before_updating_repository', '')
         ->set('hook_after_updating_repository', '')
         ->call('save')
-        ->assertRedirect(route('servers.sites.settings', [$this->server, $this->site]));
+        ->assertRedirect(
+            route('servers.sites.settings', [$this->server, $this->site]),
+        );
 
     expect($this->site->fresh())
         ->hook_before_updating_repository->toBeNull()
@@ -104,13 +122,17 @@ test('empty hooks can be saved', function () {
 test('load env button is displayed on settings page', function () {
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->assertSee('Environment File')
         ->assertSee('Load .env File');
 });
 
 test('loadEnv loads content and sets envLoaded to true', function () {
-    $envContent = "APP_ENV=production\nAPP_KEY=base64:test-key\nDB_HOST=localhost\n";
+    $envContent =
+        "APP_ENV=production\nAPP_KEY=base64:test-key\nDB_HOST=localhost\n";
 
     Process::fake([
         'ssh *' => Process::result(output: $envContent),
@@ -118,7 +140,10 @@ test('loadEnv loads content and sets envLoaded to true', function () {
 
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->call('loadEnv')
         ->assertSet('envContent', $envContent)
         ->assertSet('envLoaded', true);
@@ -126,17 +151,20 @@ test('loadEnv loads content and sets envLoaded to true', function () {
 
 test('loadEnv sets error message on failure', function () {
     Process::fake([
-        'ssh *' => Process::result(
-            exitCode: 1,
-            output: '',
-        ),
+        'ssh *' => Process::result(exitCode: 1, output: ''),
     ]);
 
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->call('loadEnv')
-        ->assertSet('envLoadError', 'Unable to read .env file or file is empty.')
+        ->assertSet(
+            'envLoadError',
+            'Unable to read .env file or file is empty.',
+        )
         ->assertSet('envLoaded', false);
 });
 
@@ -147,7 +175,10 @@ test('saveEnv saves content successfully', function () {
 
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->set('envContent', "APP_ENV=production\nAPP_KEY=new-key")
         ->set('envLoaded', true)
         ->call('saveEnv')
@@ -165,7 +196,10 @@ test('saveEnv sets error message on failure', function () {
 
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->set('envContent', 'APP_ENV=production')
         ->set('envLoaded', true)
         ->call('saveEnv')
@@ -195,14 +229,20 @@ test('user cannot load env for another users site', function () {
     $this->actingAs($this->user);
 
     Livewire::actingAs($this->user)
-        ->test('pages::sites.settings', ['server' => $anotherServer->id, 'site' => $anotherSite->id])
+        ->test('pages::sites.settings', [
+            'server' => $anotherServer->id,
+            'site' => $anotherSite->id,
+        ])
         ->assertStatus(403);
 });
 
 test('queue workers section is displayed on settings page', function () {
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->assertSee('Queue Workers')
         ->assertSee('Number of Worker Processes');
 });
@@ -212,10 +252,15 @@ test('enableQueue dispatches InstallSiteQueue job', function () {
 
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->set('queue_processes', '3')
         ->call('enableQueue')
-        ->assertRedirect(route('servers.sites.settings', [$this->server, $this->site]));
+        ->assertRedirect(
+            route('servers.sites.settings', [$this->server, $this->site]),
+        );
 
     Queue::assertPushed(InstallSiteQueue::class);
 
@@ -230,9 +275,14 @@ test('disableQueue dispatches UninstallSiteQueue job', function () {
 
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->call('disableQueue')
-        ->assertRedirect(route('servers.sites.settings', [$this->server, $this->site]));
+        ->assertRedirect(
+            route('servers.sites.settings', [$this->server, $this->site]),
+        );
 
     Queue::assertPushed(UninstallSiteQueue::class);
 
@@ -242,10 +292,15 @@ test('disableQueue dispatches UninstallSiteQueue job', function () {
 test('queue_processes can be updated', function () {
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->set('queue_processes', '5')
         ->call('save')
-        ->assertRedirect(route('servers.sites.settings', [$this->server, $this->site]));
+        ->assertRedirect(
+            route('servers.sites.settings', [$this->server, $this->site]),
+        );
 
     expect($this->site->fresh()->queue_processes)->toBe(5);
 });
@@ -253,12 +308,18 @@ test('queue_processes can be updated', function () {
 test('queue_processes validation allows values between 1 and 10', function () {
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->set('queue_processes', '0')
         ->call('save')
         ->assertHasErrors(['queue_processes' => 'min']);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->set('queue_processes', '11')
         ->call('save')
         ->assertHasErrors(['queue_processes' => 'max']);
@@ -274,7 +335,10 @@ test('database credentials section is displayed on settings page', function () {
 
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->assertSee('Database Credentials')
         ->assertSee('Database Name')
         ->assertSee('Database Username')
@@ -287,7 +351,10 @@ test('database credentials section is displayed on settings page', function () {
 test('database credentials show not configured when not set', function () {
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->assertSee('Database Credentials')
         ->assertSee('Not configured');
 });
@@ -302,7 +369,10 @@ test('database credentials show creation timestamp when set', function () {
 
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->assertSee('Database created at:')
         ->assertSee('2024-01-15 10:30:00');
 });
@@ -310,8 +380,10 @@ test('database credentials show creation timestamp when set', function () {
 test('nightwatch section is displayed on settings page', function () {
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
-        ->assertSee('Nightwatch Agent');
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])->assertSee('Nightwatch Agent');
 });
 
 test('enableNightwatch dispatches InstallSiteNightwatch job', function () {
@@ -319,9 +391,14 @@ test('enableNightwatch dispatches InstallSiteNightwatch job', function () {
 
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->call('enableNightwatch')
-        ->assertRedirect(route('servers.sites.settings', [$this->server, $this->site]));
+        ->assertRedirect(
+            route('servers.sites.settings', [$this->server, $this->site]),
+        );
 
     Queue::assertPushed(InstallSiteNightwatch::class);
 
@@ -334,11 +411,64 @@ test('disableNightwatch dispatches UninstallSiteNightwatch job', function () {
 
     $this->actingAs($this->user);
 
-    Livewire::test('pages::sites.settings', ['server' => $this->server->id, 'site' => $this->site->id])
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
         ->call('disableNightwatch')
-        ->assertRedirect(route('servers.sites.settings', [$this->server, $this->site]));
+        ->assertRedirect(
+            route('servers.sites.settings', [$this->server, $this->site]),
+        );
 
     Queue::assertPushed(UninstallSiteNightwatch::class);
 
     expect($this->site->fresh()->nightwatch_enabled)->toBeFalse();
+});
+
+test('scheduler section is displayed on settings page', function () {
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])->assertSee('Laravel Scheduler');
+});
+
+test('enableScheduler dispatches InstallSiteScheduler job', function () {
+    Queue::fake();
+
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
+        ->call('enableScheduler')
+        ->assertRedirect(
+            route('servers.sites.settings', [$this->server, $this->site]),
+        );
+
+    Queue::assertPushed(InstallSiteScheduler::class);
+
+    expect($this->site->fresh()->scheduler_enabled)->toBeTrue();
+});
+
+test('disableScheduler dispatches UninstallSiteScheduler job', function () {
+    $this->site->update(['scheduler_enabled' => true]);
+    Queue::fake();
+
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
+        ->call('disableScheduler')
+        ->assertRedirect(
+            route('servers.sites.settings', [$this->server, $this->site]),
+        );
+
+    Queue::assertPushed(UninstallSiteScheduler::class);
+
+    expect($this->site->fresh()->scheduler_enabled)->toBeFalse();
 });

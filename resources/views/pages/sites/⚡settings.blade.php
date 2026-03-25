@@ -3,8 +3,10 @@
 use App\Helpers\RemoteFile;
 use App\Jobs\InstallSiteNightwatch;
 use App\Jobs\InstallSiteQueue;
+use App\Jobs\InstallSiteScheduler;
 use App\Jobs\UninstallSiteNightwatch;
 use App\Jobs\UninstallSiteQueue;
+use App\Jobs\UninstallSiteScheduler;
 use App\Models\Server;
 use App\Models\Site;
 use Livewire\Attributes\Computed;
@@ -129,6 +131,30 @@ new class extends Component
         dispatch(new UninstallSiteNightwatch($site->id));
 
         session()->flash('nightwatchStatus', 'Nightwatch agent disabled successfully.');
+        $this->redirect(route('servers.sites.settings', [$this->server, $this->site]), navigate: true);
+    }
+
+    public function enableScheduler(): void
+    {
+        $site = $this->site();
+
+        $site->update(['scheduler_enabled' => true]);
+
+        dispatch(new InstallSiteScheduler($site->id));
+
+        session()->flash('schedulerStatus', 'Laravel scheduler enabled successfully.');
+        $this->redirect(route('servers.sites.settings', [$this->server, $this->site]), navigate: true);
+    }
+
+    public function disableScheduler(): void
+    {
+        $site = $this->site();
+
+        $site->update(['scheduler_enabled' => false]);
+
+        dispatch(new UninstallSiteScheduler($site->id));
+
+        session()->flash('schedulerStatus', 'Laravel scheduler disabled successfully.');
         $this->redirect(route('servers.sites.settings', [$this->server, $this->site]), navigate: true);
     }
 
@@ -267,6 +293,27 @@ new class extends Component
             <div class="flex items-center gap-4">
                 <flux:text>Nightwatch agent is disabled</flux:text>
                 <flux:button wire:click="enableNightwatch">Enable Nightwatch</flux:button>
+            </div>
+        @endif
+    </div>
+
+    <div class="max-w-lg mt-16 space-y-8">
+        <flux:heading class="mb-2">Laravel Scheduler</flux:heading>
+        <flux:text class="mb-4">Manage Laravel scheduler for this site using Cron</flux:text>
+
+        @if(session('schedulerStatus'))
+            <flux:text color="green" class="mb-4">{{ session('schedulerStatus') }}</flux:text>
+        @endif
+
+        @if($this->site->scheduler_enabled)
+            <div class="flex items-center gap-4">
+                <flux:text color="green">Laravel scheduler is enabled</flux:text>
+                <flux:button wire:click="disableScheduler" variant="danger">Disable Scheduler</flux:button>
+            </div>
+        @else
+            <div class="flex items-center gap-4">
+                <flux:text>Laravel scheduler is disabled</flux:text>
+                <flux:button wire:click="enableScheduler">Enable Scheduler</flux:button>
             </div>
         @endif
     </div>

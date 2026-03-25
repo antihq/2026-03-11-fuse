@@ -438,3 +438,31 @@ test('nightwatchLogPath returns correct path', function () {
 
     expect($site->nightwatchLogPath())->toBe($expectedPath);
 });
+
+test('scheduler_enabled can be set and is cast to boolean', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+        'scheduler_enabled' => true,
+    ]);
+
+    expect($site->scheduler_enabled)->toBeTrue();
+    expect($site->scheduler_enabled)->toBeBool();
+});
+
+test('schedulerCronPath returns correct path', function () {
+    $site = Site::create([
+        'server_id' => $this->server->id,
+        'hostname' => 'example.com',
+        'php_version' => '8.4',
+        'size' => 'large',
+        'repository_url' => 'git@github.com:user/repo.git',
+        'repository_branch' => 'main',
+    ]);
+
+    expect($site->schedulerCronPath())->toBe('/etc/cron.d/site-'.$site->id.'-scheduler');
+});
