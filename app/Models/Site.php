@@ -132,6 +132,8 @@ if [ -f "artisan" ]; then
     php{$phpVersion} artisan event:cache
 
     php{$phpVersion} artisan storage:link
+
+    sudo service php8.4-fpm reload
 fi
 BASH;
     }
