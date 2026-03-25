@@ -133,7 +133,7 @@ if [ -f "artisan" ]; then
 
     php{$phpVersion} artisan storage:link
 
-    sudo service php8.4-fpm reload
+    sudo service php{$phpVersion}-fpm reload
 fi
 BASH;
     }
