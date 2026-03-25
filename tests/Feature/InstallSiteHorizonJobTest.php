@@ -1,6 +1,6 @@
 <?php
 
-use App\Jobs\InstallSiteQueue;
+use App\Jobs\InstallSiteHorizon;
 use App\Models\Server;
 use App\Models\Site;
 use App\Models\Task;
@@ -24,18 +24,18 @@ beforeEach(function () {
         'size' => 'large',
         'repository_url' => 'git@github.com:user/repo.git',
         'repository_branch' => 'main',
-        'queue_enabled' => true,
-        'queue_processes' => 3,
+        'horizon_enabled' => true,
+        'queue_enabled' => false,
         'status' => 'ready',
     ]);
 });
 
-test('handle creates task and installs queue supervisor config', function () {
+test('handle creates task and installs horizon supervisor config', function () {
     Process::fake([
         '*' => Process::result(exitCode: 0),
     ]);
 
-    $job = new InstallSiteQueue($this->site->id);
+    $job = new InstallSiteHorizon($this->site->id);
     $job->handle();
 
     $tasks = Task::where('server_id', $this->server->id)->get();
@@ -51,7 +51,7 @@ test('handle creates log directory with correct permissions', function () {
         '*' => Process::result(exitCode: 0),
     ]);
 
-    $job = new InstallSiteQueue($this->site->id);
+    $job = new InstallSiteHorizon($this->site->id);
     $job->handle();
 
     $tasks = Task::where('server_id', $this->server->id)->get();
@@ -63,12 +63,12 @@ test('handle creates log directory with correct permissions', function () {
         ->toContain('chmod 775 /home/deploy/example.com/storage/logs');
 });
 
-test('handle reloads supervisor and starts queue workers', function () {
+test('handle reloads supervisor and starts horizon', function () {
     Process::fake([
         '*' => Process::result(exitCode: 0),
     ]);
 
-    $job = new InstallSiteQueue($this->site->id);
+    $job = new InstallSiteHorizon($this->site->id);
     $job->handle();
 
     $tasks = Task::where('server_id', $this->server->id)->get();
@@ -77,7 +77,7 @@ test('handle reloads supervisor and starts queue workers', function () {
     expect($reloadTask->script)
         ->toContain('supervisorctl reread')
         ->toContain('supervisorctl update')
-        ->toContain('supervisorctl start site-'.$this->site->id.':*');
+        ->toContain('supervisorctl start site-'.$this->site->id.'-horizon:*');
 });
 
 test('handle creates log files before starting supervisor', function () {
@@ -85,15 +85,15 @@ test('handle creates log files before starting supervisor', function () {
         '*' => Process::result(exitCode: 0),
     ]);
 
-    $job = new InstallSiteQueue($this->site->id);
+    $job = new InstallSiteHorizon($this->site->id);
     $job->handle();
 
     $tasks = Task::where('server_id', $this->server->id)->get();
     $reloadTask = $tasks->sortBy('id')->last();
 
     expect($reloadTask->script)
-        ->toContain('touch /home/deploy/example.com/storage/logs/queue.log /home/deploy/example.com/storage/logs/queue-error.log')
-        ->toContain('chown deploy:deploy /home/deploy/example.com/storage/logs/queue.log /home/deploy/example.com/storage/logs/queue-error.log');
+        ->toContain('touch /home/deploy/example.com/storage/logs/horizon.log /home/deploy/example.com/storage/logs/horizon-error.log')
+        ->toContain('chown deploy:deploy /home/deploy/example.com/storage/logs/horizon.log /home/deploy/example.com/storage/logs/horizon-error.log');
 });
 
 test('handle returns early when user has no ssh key', function () {
@@ -110,109 +110,65 @@ test('handle returns early when user has no ssh key', function () {
         'server_id' => $server->id,
         'hostname' => 'example.com',
         'php_version' => '8.4',
-        'queue_enabled' => true,
-        'queue_processes' => 1,
+        'horizon_enabled' => true,
         'status' => 'ready',
         'repository_url' => 'git@github.com:user/repo.git',
         'repository_branch' => 'main',
     ]);
 
-    $job = new InstallSiteQueue($site->id);
+    $job = new InstallSiteHorizon($site->id);
     $job->handle();
 
     expect(Task::where('server_id', $server->id)->count())->toBe(0);
 });
 
-test('failed method sets queue_enabled to false', function () {
-    $this->site->update(['queue_enabled' => true]);
-
-    $job = new InstallSiteQueue($this->site->id);
-    $job->failed(new Exception('Test failure'));
-
-    expect($this->site->fresh()->queue_enabled)->toBeFalse();
-});
-
-test('supervisor config contains correct php version', function () {
-    $config = view('scripts.site-queue-supervisor', [
-        'site' => $this->site,
-        'sitesUser' => 'deploy',
-        'repoPath' => '/home/deploy/example.com/repository',
-        'logPath' => '/home/deploy/example.com/storage/logs',
-    ])->render();
-
-    expect($config)
-        ->toContain('php8.4 /home/deploy/example.com/repository/artisan queue:work')
-        ->toContain('numprocs=3');
-});
-
-test('supervisor config contains correct paths', function () {
-    $config = view('scripts.site-queue-supervisor', [
-        'site' => $this->site,
-        'sitesUser' => 'deploy',
-        'repoPath' => '/home/deploy/example.com/repository',
-        'logPath' => '/home/deploy/example.com/storage/logs',
-    ])->render();
-
-    expect($config)
-        ->toContain('program:site-'.$this->site->id)
-        ->toContain('directory=/home/deploy/example.com/repository')
-        ->toContain('stdout_logfile=/home/deploy/example.com/storage/logs/queue.log')
-        ->toContain('stderr_logfile=/home/deploy/example.com/storage/logs/queue-error.log')
-        ->toContain('user=deploy');
-});
-
-test('supervisor config uses heredoc syntax', function () {
-    $config = view('scripts.site-queue-supervisor', [
-        'site' => $this->site,
-        'sitesUser' => 'deploy',
-        'repoPath' => '/home/deploy/example.com/repository',
-        'logPath' => '/home/deploy/example.com/storage/logs',
-    ])->render();
-
-    expect($config)
-        ->toContain("cat > /etc/supervisor/conf.d/site-{$this->site->id}.conf << 'EOF'")
-        ->toContain('EOF');
-});
-
-test('handle disables horizon when horizon is enabled', function () {
+test('failed method sets horizon_enabled to false', function () {
     $this->site->update(['horizon_enabled' => true]);
-    Process::fake([
-        '*' => Process::result(exitCode: 0),
-    ]);
 
-    $job = new InstallSiteQueue($this->site->id);
-    $job->handle();
+    $job = new InstallSiteHorizon($this->site->id);
+    $job->failed(new Exception('Test failure'));
 
     expect($this->site->fresh()->horizon_enabled)->toBeFalse();
 });
 
-test('handle stops horizon and removes config before installing queue', function () {
-    $this->site->update(['horizon_enabled' => true]);
-    Process::fake([
-        '*' => Process::result(exitCode: 0),
-    ]);
+test('supervisor config contains correct php version', function () {
+    $config = view('scripts.site-horizon-supervisor', [
+        'site' => $this->site,
+        'sitesUser' => 'deploy',
+        'repoPath' => '/home/deploy/example.com/repository',
+        'logPath' => '/home/deploy/example.com/storage/logs',
+    ])->render();
 
-    $job = new InstallSiteQueue($this->site->id);
-    $job->handle();
-
-    $tasks = Task::where('server_id', $this->server->id)->get();
-    $disableTask = $tasks->first(fn ($t) => str_contains($t->script, 'supervisorctl stop'));
-
-    expect($disableTask->script)
-        ->toContain('supervisorctl stop site-'.$this->site->id.'-horizon:*')
-        ->toContain('rm -f /etc/supervisor/conf.d/site-'.$this->site->id.'-horizon.conf');
+    expect($config)
+        ->toContain('php8.4 /home/deploy/example.com/repository/artisan horizon')
+        ->toContain('numprocs=1');
 });
 
-test('handle returns early if disabling horizon fails', function () {
-    $this->site->update(['horizon_enabled' => true]);
+test('supervisor config contains correct paths', function () {
+    $config = view('scripts.site-horizon-supervisor', [
+        'site' => $this->site,
+        'sitesUser' => 'deploy',
+        'repoPath' => '/home/deploy/example.com/repository',
+        'logPath' => '/home/deploy/example.com/storage/logs',
+    ])->render();
 
-    Process::fake([
-        '*' => Process::result(exitCode: 1),
-    ]);
+    expect($config)
+        ->toContain('program:site-'.$this->site->id.'-horizon')
+        ->toContain('directory=/home/deploy/example.com/repository')
+        ->toContain('stdout_logfile=/home/deploy/example.com/storage/logs/horizon.log')
+        ->toContain('stderr_logfile=/home/deploy/example.com/storage/logs/horizon-error.log')
+        ->toContain('user=deploy');
+});
 
-    $job = new InstallSiteQueue($this->site->id);
-    $job->handle();
+test('supervisor config uses heredoc syntax', function () {
+    $config = view('scripts.site-horizon-supervisor', [
+        'site' => $this->site,
+        'sitesUser' => 'deploy',
+        'repoPath' => '/home/deploy/example.com/repository',
+        'logPath' => '/home/deploy/example.com/storage/logs',
+    ])->render();
 
-    expect(Task::where('server_id', $this->server->id)->count())->toBe(1);
-    expect($this->site->fresh()->horizon_enabled)->toBeTrue();
+    expect($config)
+        ->toContain("cat > /etc/supervisor/conf.d/site-{$this->site->id}-horizon << 'EOF'")
+        ->toContain('EOF');
 });

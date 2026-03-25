@@ -30,6 +30,7 @@ class Site extends Model
         'queue_processes',
         'nightwatch_enabled',
         'scheduler_enabled',
+        'horizon_enabled',
     ];
 
     protected function casts(): array
@@ -44,6 +45,7 @@ class Site extends Model
             'queue_processes' => 'integer',
             'nightwatch_enabled' => 'boolean',
             'scheduler_enabled' => 'boolean',
+            'horizon_enabled' => 'boolean',
         ];
     }
 
@@ -85,6 +87,11 @@ class Site extends Model
     public function schedulerCronPath(): string
     {
         return "/etc/cron.d/site-{$this->id}-scheduler";
+    }
+
+    public function horizonSupervisorConfigPath(): string
+    {
+        return "/etc/supervisor/conf.d/site-{$this->id}-horizon.conf";
     }
 
     public static function defaultAfterHook(string $phpVersion): string

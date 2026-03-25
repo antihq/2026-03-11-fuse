@@ -1,9 +1,11 @@
 <?php
 
 use App\Helpers\RemoteFile;
+use App\Jobs\InstallSiteHorizon;
 use App\Jobs\InstallSiteNightwatch;
 use App\Jobs\InstallSiteQueue;
 use App\Jobs\InstallSiteScheduler;
+use App\Jobs\UninstallSiteHorizon;
 use App\Jobs\UninstallSiteNightwatch;
 use App\Jobs\UninstallSiteQueue;
 use App\Jobs\UninstallSiteScheduler;
@@ -158,6 +160,33 @@ new class extends Component
         $this->redirect(route('servers.sites.settings', [$this->server, $this->site]), navigate: true);
     }
 
+    public function enableHorizon(): void
+    {
+        $site = $this->site();
+
+        $site->update([
+            'horizon_enabled' => true,
+            'queue_enabled' => false,
+        ]);
+
+        dispatch(new InstallSiteHorizon($site->id));
+
+        session()->flash('horizonStatus', 'Laravel Horizon enabled successfully.');
+        $this->redirect(route('servers.sites.settings', [$this->server, $this->site]), navigate: true);
+    }
+
+    public function disableHorizon(): void
+    {
+        $site = $this->site();
+
+        $site->update(['horizon_enabled' => false]);
+
+        dispatch(new UninstallSiteHorizon($site->id));
+
+        session()->flash('horizonStatus', 'Laravel Horizon disabled successfully.');
+        $this->redirect(route('servers.sites.settings', [$this->server, $this->site]), navigate: true);
+    }
+
     public function loadEnv(): void
     {
         $site = $this->site();
@@ -274,6 +303,31 @@ new class extends Component
         <p class="text-sm mt-1">
             Number of queue worker processes to run (1-10). Requires restarting queues to take effect.
         </p>
+    </div>
+
+    <div class="max-w-lg mt-16 space-y-8">
+        <flux:heading class="mb-2">Laravel Horizon</flux:heading>
+        <flux:text class="mb-4">Manage Laravel Horizon for this site using Supervisor</flux:text>
+
+        @if(session('horizonStatus'))
+            <flux:text color="green" class="mb-4">{{ session('horizonStatus') }}</flux:text>
+        @endif
+
+        @if($this->site->horizon_enabled)
+            <div class="flex items-center gap-4 mb-4">
+                <flux:text color="green">Laravel Horizon is enabled</flux:text>
+                <flux:button wire:click="disableHorizon" variant="danger">Disable Horizon</flux:button>
+            </div>
+        @else
+            <div class="flex items-center gap-4 mb-4">
+                <flux:text>Laravel Horizon is disabled</flux:text>
+                <flux:button wire:click="enableHorizon">Enable Horizon</flux:button>
+            </div>
+        @endif
+
+        <flux:text class="text-sm">
+            Horizon is a beautiful dashboard and code-driven configuration for your Laravel powered Redis queues. Note: enabling Horizon will disable regular queue workers.
+        </flux:text>
     </div>
 
     <div class="max-w-lg mt-16 space-y-8">

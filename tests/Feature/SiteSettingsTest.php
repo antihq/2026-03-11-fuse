@@ -1,8 +1,10 @@
 <?php
 
+use App\Jobs\InstallSiteHorizon;
 use App\Jobs\InstallSiteNightwatch;
 use App\Jobs\InstallSiteQueue;
 use App\Jobs\InstallSiteScheduler;
+use App\Jobs\UninstallSiteHorizon;
 use App\Jobs\UninstallSiteNightwatch;
 use App\Jobs\UninstallSiteQueue;
 use App\Jobs\UninstallSiteScheduler;
@@ -471,4 +473,55 @@ test('disableScheduler dispatches UninstallSiteScheduler job', function () {
     Queue::assertPushed(UninstallSiteScheduler::class);
 
     expect($this->site->fresh()->scheduler_enabled)->toBeFalse();
+});
+
+test('horizon section is displayed on settings page', function () {
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])->assertSee('Laravel Horizon');
+});
+
+test('enableHorizon dispatches InstallSiteHorizon job and disables queue', function () {
+    $this->site->update(['queue_enabled' => true]);
+    Queue::fake();
+
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
+        ->call('enableHorizon')
+        ->assertRedirect(
+            route('servers.sites.settings', [$this->server, $this->site]),
+        );
+
+    Queue::assertPushed(InstallSiteHorizon::class);
+
+    expect($this->site->fresh())
+        ->horizon_enabled->toBeTrue()
+        ->queue_enabled->toBeFalse();
+});
+
+test('disableHorizon dispatches UninstallSiteHorizon job', function () {
+    $this->site->update(['horizon_enabled' => true]);
+    Queue::fake();
+
+    $this->actingAs($this->user);
+
+    Livewire::test('pages::sites.settings', [
+        'server' => $this->server->id,
+        'site' => $this->site->id,
+    ])
+        ->call('disableHorizon')
+        ->assertRedirect(
+            route('servers.sites.settings', [$this->server, $this->site]),
+        );
+
+    Queue::assertPushed(UninstallSiteHorizon::class);
+
+    expect($this->site->fresh()->horizon_enabled)->toBeFalse();
 });

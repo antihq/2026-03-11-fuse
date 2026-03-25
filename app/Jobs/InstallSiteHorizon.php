@@ -10,7 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Throwable;
 
-class InstallSiteQueue implements ShouldQueue
+class InstallSiteHorizon implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
@@ -37,34 +37,11 @@ class InstallSiteQueue implements ShouldQueue
         $repoPath = "/home/{$server->sites_user}/{$site->hostname}/repository";
         $logPath = $site->queueLogPath();
 
-        if ($site->horizon_enabled) {
-            $disableHorizonTask = Task::create([
-                'user_id' => $user->id,
-                'server_id' => $server->id,
-                'ssh_user' => 'root',
-                'script' => implode("\n", [
-                    'supervisorctl stop site-'.$site->id.'-horizon:*',
-                    'rm -f '.$site->horizonSupervisorConfigPath(),
-                    'supervisorctl reread',
-                    'supervisorctl update',
-                ]),
-                'timeout' => 60,
-            ]);
-
-            $disableHorizonTask->run();
-
-            if (! $disableHorizonTask->successful()) {
-                return;
-            }
-
-            $site->update(['horizon_enabled' => false]);
-        }
-
         $task = Task::create([
             'user_id' => $user->id,
             'server_id' => $server->id,
             'ssh_user' => 'root',
-            'script' => view('scripts.site-queue-supervisor', [
+            'script' => view('scripts.site-horizon-supervisor', [
                 'site' => $site,
                 'sitesUser' => $server->sites_user,
                 'repoPath' => $repoPath,
@@ -84,11 +61,11 @@ class InstallSiteQueue implements ShouldQueue
                     'mkdir -p '.$logPath,
                     'chown '.$server->sites_user.':'.$server->sites_user.' '.$logPath,
                     'chmod 775 '.$logPath,
-                    'touch '.$logPath.'/queue.log '.$logPath.'/queue-error.log',
-                    'chown '.$server->sites_user.':'.$server->sites_user.' '.$logPath.'/queue.log '.$logPath.'/queue-error.log',
+                    'touch '.$logPath.'/horizon.log '.$logPath.'/horizon-error.log',
+                    'chown '.$server->sites_user.':'.$server->sites_user.' '.$logPath.'/horizon.log '.$logPath.'/horizon-error.log',
                     'supervisorctl reread',
                     'supervisorctl update',
-                    'supervisorctl start site-'.$site->id.':*',
+                    'supervisorctl start site-'.$site->id.'-horizon:*',
                 ]),
                 'timeout' => 60,
             ]);
@@ -100,7 +77,7 @@ class InstallSiteQueue implements ShouldQueue
     public function failed(?Throwable $e): void
     {
         Site::where('id', $this->siteId)->update([
-            'queue_enabled' => false,
+            'horizon_enabled' => false,
         ]);
     }
 }
