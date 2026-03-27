@@ -172,6 +172,18 @@ test('supervisor config uses heredoc syntax', function () {
         ->toContain('EOF');
 });
 
+test('template writes to nightwatchSupervisorConfigPath', function () {
+    $config = view('scripts.site-nightwatch-supervisor', [
+        'site' => $this->site,
+        'sitesUser' => 'deploy',
+        'repoPath' => '/home/deploy/example.com/repository',
+        'logPath' => '/home/deploy/example.com/storage/logs',
+    ])->render();
+
+    expect($config)
+        ->toContain('cat > '.$this->site->nightwatchSupervisorConfigPath().' << \'EOF\'');
+});
+
 test('supervisor config runs nightwatch:agent command', function () {
     $config = view('scripts.site-nightwatch-supervisor', [
         'site' => $this->site,

@@ -1,4 +1,4 @@
-cat > /etc/supervisor/conf.d/site-{{ $site->id }}-horizon << 'EOF'
+cat > /etc/supervisor/conf.d/site-{{ $site->id }}-horizon.conf << 'EOF'
 [program:site-{{ $site->id }}-horizon]
 command=php{{ $site->php_version }} {{ $repoPath }}/artisan horizon
 autostart=true

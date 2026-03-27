@@ -169,6 +169,18 @@ test('supervisor config uses heredoc syntax', function () {
     ])->render();
 
     expect($config)
-        ->toContain("cat > /etc/supervisor/conf.d/site-{$this->site->id}-horizon << 'EOF'")
+        ->toContain("cat > /etc/supervisor/conf.d/site-{$this->site->id}-horizon.conf << 'EOF'")
         ->toContain('EOF');
+});
+
+test('template writes to horizonSupervisorConfigPath', function () {
+    $config = view('scripts.site-horizon-supervisor', [
+        'site' => $this->site,
+        'sitesUser' => 'deploy',
+        'repoPath' => '/home/deploy/example.com/repository',
+        'logPath' => '/home/deploy/example.com/storage/logs',
+    ])->render();
+
+    expect($config)
+        ->toContain('cat > '.$this->site->horizonSupervisorConfigPath().' << \'EOF\'');
 });
